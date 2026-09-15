@@ -18,6 +18,7 @@ export type Profile = {
   nik: string;
   full_name: string;
   job_title: string | null;
+  job_title_id: string | null;
   role: UserRole;
   supervisor_id: string | null;
   office_location_id: string | null;
@@ -25,6 +26,7 @@ export type Profile = {
   ptkp_status: string | null;
   npwp: string | null;
   phone: string | null;
+  personal_email: string | null;
   join_date: string | null;
   annual_leave_quota: number | null;
   avatar_url: string | null;
@@ -127,6 +129,20 @@ export type CompanyAsset = {
   created_at: string;
 };
 
+export type JobTitle = {
+  id: string;
+  name: string;
+  created_at: string;
+};
+
+export type Salary = {
+  id: string;
+  job_title_id: string;
+  base_salary: number;
+  notes: string | null;
+  created_at: string;
+};
+
 export type KpiRecord = {
   id: string;
   user_id: string;
@@ -143,6 +159,7 @@ export type ProfileInsert = {
   nik: string;
   full_name: string;
   job_title?: string | null;
+  job_title_id?: string | null;
   role?: UserRole;
   supervisor_id?: string | null;
   office_location_id?: string | null;
@@ -150,6 +167,7 @@ export type ProfileInsert = {
   ptkp_status?: string | null;
   npwp?: string | null;
   phone?: string | null;
+  personal_email?: string | null;
   join_date?: string | null;
   annual_leave_quota?: number | null;
   avatar_url?: string | null;
@@ -159,6 +177,7 @@ export type ProfileUpdate = {
   nik?: string;
   full_name?: string;
   job_title?: string | null;
+  job_title_id?: string | null;
   role?: UserRole;
   supervisor_id?: string | null;
   office_location_id?: string | null;
@@ -166,6 +185,7 @@ export type ProfileUpdate = {
   ptkp_status?: string | null;
   npwp?: string | null;
   phone?: string | null;
+  personal_email?: string | null;
   join_date?: string | null;
   annual_leave_quota?: number | null;
   avatar_url?: string | null;
@@ -306,6 +326,24 @@ export type CompanyAssetUpdate = {
   notes?: string | null;
 };
 
+export type JobTitleInsert = {
+  name: string;
+};
+export type JobTitleUpdate = {
+  name?: string;
+};
+
+export type SalaryInsert = {
+  job_title_id: string;
+  base_salary?: number;
+  notes?: string | null;
+};
+export type SalaryUpdate = {
+  job_title_id?: string;
+  base_salary?: number;
+  notes?: string | null;
+};
+
 export type KpiRecordInsert = {
   user_id: string;
   period_month: number;
@@ -389,6 +427,18 @@ export type Database = {
         Row: KpiRecord;
         Insert: KpiRecordInsert;
         Update: KpiRecordUpdate;
+        Relationships: [];
+      };
+      job_titles: {
+        Row: JobTitle;
+        Insert: JobTitleInsert;
+        Update: JobTitleUpdate;
+        Relationships: [];
+      };
+      salaries: {
+        Row: Salary;
+        Insert: SalaryInsert;
+        Update: SalaryUpdate;
         Relationships: [];
       };
     };

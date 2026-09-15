@@ -11,6 +11,7 @@ import {
   IconClock,
   IconFileText,
   IconHistory,
+  IconLayoutDashboard,
   IconLogout,
   IconMegaphone,
   IconUsersCheck,
@@ -41,6 +42,7 @@ export default async function HomePage() {
   const role = profile?.role ?? "employee";
 
   const menuItems = [
+    { href: "/admin", label: "Dashboard", icon: IconLayoutDashboard, show: role === "hr_admin" },
     { href: "/absensi", label: "Kehadiran", icon: IconClock, show: true },
     { href: "/leave", label: "Off", icon: IconCalendarOff, show: true },
     { href: "/attendance-history", label: "Cat Kehadiran", icon: IconHistory, show: true },
@@ -54,11 +56,15 @@ export default async function HomePage() {
 
   return (
     <div>
-      <div className="bg-brand-red px-4 pt-4 pb-8 text-white">
+      <div className="bg-brand-cream px-4 pt-4 pb-10">
         <div className="flex items-center justify-between">
-          <Image src="/logo.png" alt="PRS" width={36} height={36} className="drop-shadow" />
+          <Image src="/logo.png" alt="PRS" width={36} height={36} className="drop-shadow-sm" />
           <form action={signOut}>
-            <button type="submit" aria-label="Keluar" className="text-white/90 hover:text-white">
+            <button
+              type="submit"
+              aria-label="Keluar"
+              className="rounded-full p-1.5 text-gray-500 transition-colors duration-150 hover:bg-white hover:text-brand-red active:bg-white/70"
+            >
               <IconLogout className="h-5 w-5" />
             </button>
           </form>
@@ -70,57 +76,57 @@ export default async function HomePage() {
             <img
               src={profile.avatar_url}
               alt={profile.full_name}
-              className="h-18 w-18 rounded-full border-2 border-white object-cover"
+              className="h-18 w-18 rounded-full border-2 border-brand-red object-cover"
             />
           ) : (
-            <div className="flex h-18 w-18 items-center justify-center rounded-full border-2 border-white bg-white/10 text-xl font-semibold">
+            <div className="flex h-18 w-18 items-center justify-center rounded-full border-2 border-brand-red bg-white text-xl font-semibold text-brand-red">
               {initials(profile?.full_name ?? user!.email ?? "?")}
             </div>
           )}
-          <p className="mt-2 text-lg font-semibold">{profile?.full_name ?? user!.email}</p>
-          <p className="text-sm text-white/85">
+          <p className="mt-2 text-lg font-semibold text-gray-900">{profile?.full_name ?? user!.email}</p>
+          <p className="text-sm text-gray-600">
             {profile?.job_title ?? (role === "hr_admin" ? "HR Admin" : role === "supervisor" ? "Supervisor" : "Karyawan")}
           </p>
-          {profile?.nik && <p className="text-xs text-white/70">NIK : {profile.nik}</p>}
+          {profile?.nik && <p className="text-xs text-gray-500">NIK : {profile.nik}</p>}
         </div>
       </div>
 
-      <div className="-mt-4 px-4">
+      <div className="bg-dot-pattern -mt-6 rounded-t-3xl bg-background px-4 pt-6 pb-10">
         <Link
           href="/announcements"
-          className="flex items-center justify-center gap-2 rounded-full border border-brand-red bg-white px-4 py-2.5 text-sm font-semibold text-brand-red shadow-sm"
+          className="flex items-center justify-center gap-2 rounded-full border border-brand-red bg-white px-4 py-2.5 text-sm font-semibold text-brand-red shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm"
         >
           <IconMegaphone className="h-4 w-4" />
           Pengumuman Perusahaan
         </Link>
-      </div>
 
-      <div className="grid grid-cols-3 gap-4 px-6 py-8">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const content = (
-            <>
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-brand-red shadow-sm">
-                <Icon className="h-6 w-6" />
-              </span>
-              <span className="text-xs font-medium text-gray-700">{item.label}</span>
-            </>
-          );
-
-          if (item.disabled) {
-            return (
-              <div key={item.label} className="flex flex-col items-center gap-1.5 opacity-40">
-                {content}
-              </div>
+        <div className="grid grid-cols-3 gap-4 px-2 py-8">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const content = (
+              <>
+                <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white text-brand-red shadow-sm transition-[transform,box-shadow,color] duration-200 ease-out will-change-transform group-hover:text-brand-red-dark group-hover:[transform:perspective(500px)_rotateX(14deg)_translateY(-6px)_scale(1.1)] group-hover:shadow-xl group-active:[transform:perspective(500px)_rotateX(4deg)_scale(0.92)] group-active:shadow-md">
+                  <Icon className="h-9 w-9" />
+                </span>
+                <span className="text-xs font-medium text-gray-700">{item.label}</span>
+              </>
             );
-          }
 
-          return (
-            <Link key={item.label} href={item.href} className="flex flex-col items-center gap-1.5">
-              {content}
-            </Link>
-          );
-        })}
+            if (item.disabled) {
+              return (
+                <div key={item.label} className="group flex flex-col items-center gap-1.5 opacity-40">
+                  {content}
+                </div>
+              );
+            }
+
+            return (
+              <Link key={item.label} href={item.href} className="group flex flex-col items-center gap-1.5">
+                {content}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
