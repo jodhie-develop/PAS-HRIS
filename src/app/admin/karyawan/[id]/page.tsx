@@ -28,9 +28,17 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const supabaseAdmin = createAdminClient();
-  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(id);
-  const companyEmail = authUser.user?.email ?? "";
+  // Fetching the login email needs the service-role key, which is only
+  // required for this one field — don't let a missing/misconfigured key
+  // (e.g. not set in the deploy environment) take down the whole edit page.
+  let companyEmail = "";
+  try {
+    const supabaseAdmin = createAdminClient();
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(id);
+    companyEmail = authUser.user?.email ?? "";
+  } catch {
+    companyEmail = "";
+  }
 
   return (
     <div className="space-y-6">

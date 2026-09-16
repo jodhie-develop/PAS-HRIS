@@ -66,11 +66,17 @@ export function EmployeeEditForm({
               id="company_email"
               name="company_email"
               type="email"
-              required
               defaultValue={companyEmail}
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
-            <p className="mt-1 text-xs text-gray-500">Dipakai untuk login. Ubah dengan hati-hati.</p>
+            {companyEmail ? (
+              <p className="mt-1 text-xs text-gray-500">Dipakai untuk login. Ubah dengan hati-hati.</p>
+            ) : (
+              <p className="mt-1 text-xs text-amber-600">
+                Tidak bisa memuat email login saat ini. Biarkan kosong agar tidak berubah, atau isi untuk mengatur
+                ulang.
+              </p>
+            )}
           </div>
           <div>
             <label htmlFor="personal_email" className="block text-sm font-medium text-gray-700">

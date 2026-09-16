@@ -60,7 +60,15 @@ export async function createEmployee(
     job_title_name = jobTitle?.name ?? null;
   }
 
-  const supabaseAdmin = createAdminClient();
+  let supabaseAdmin: ReturnType<typeof createAdminClient>;
+  try {
+    supabaseAdmin = createAdminClient();
+  } catch {
+    return {
+      error: "Konfigurasi server belum lengkap (SUPABASE_SERVICE_ROLE_KEY belum di-set). Hubungi developer.",
+      success: false,
+    };
+  }
   const temporaryPassword = generateTemporaryPassword();
 
   const { data: created, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -134,7 +142,15 @@ export async function updateEmployee(
   }
 
   if (companyEmail) {
-    const supabaseAdmin = createAdminClient();
+    let supabaseAdmin: ReturnType<typeof createAdminClient>;
+    try {
+      supabaseAdmin = createAdminClient();
+    } catch {
+      return {
+        error: "Konfigurasi server belum lengkap (SUPABASE_SERVICE_ROLE_KEY belum di-set). Hubungi developer.",
+        success: false,
+      };
+    }
     const { data: currentUser } = await supabaseAdmin.auth.admin.getUserById(id);
     if (currentUser.user && currentUser.user.email !== companyEmail) {
       const { error: emailError } = await supabaseAdmin.auth.admin.updateUserById(id, {
