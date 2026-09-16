@@ -118,14 +118,21 @@ export type AppDocument = {
   created_at: string;
 };
 
+export type AssetType = "barang" | "akun_digital";
+
 export type CompanyAsset = {
   id: string;
+  asset_type: AssetType;
   asset_name: string;
   asset_code: string | null;
   assigned_to: string | null;
   office_location_id: string | null;
   status: string | null;
   notes: string | null;
+  digital_email: string | null;
+  digital_phone: string | null;
+  digital_username: string | null;
+  digital_password: string | null;
   created_at: string;
 };
 
@@ -310,20 +317,30 @@ export type AppDocumentUpdate = {
 };
 
 export type CompanyAssetInsert = {
+  asset_type?: AssetType;
   asset_name: string;
   asset_code?: string | null;
   assigned_to?: string | null;
   office_location_id?: string | null;
   status?: string | null;
   notes?: string | null;
+  digital_email?: string | null;
+  digital_phone?: string | null;
+  digital_username?: string | null;
+  digital_password?: string | null;
 };
 export type CompanyAssetUpdate = {
+  asset_type?: AssetType;
   asset_name?: string;
-  asset_code?: string;
+  asset_code?: string | null;
   assigned_to?: string | null;
   office_location_id?: string | null;
-  status?: string;
+  status?: string | null;
   notes?: string | null;
+  digital_email?: string | null;
+  digital_phone?: string | null;
+  digital_username?: string | null;
+  digital_password?: string | null;
 };
 
 export type JobTitleInsert = {

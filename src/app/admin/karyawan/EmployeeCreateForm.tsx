@@ -64,7 +64,7 @@ export function EmployeeCreateForm({
               name="email"
               type="email"
               required
-              placeholder="nama@prs.co.id"
+              placeholder="email@prasastiindonesia.com"
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
             <p className="mt-1 text-xs text-gray-500">

@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login"];
+const CHANGE_PASSWORD_PATH = "/ganti-password";
 
 // Refreshes the Supabase auth session on every request and redirects
 // unauthenticated users away from protected pages. Runs in src/middleware.ts.
@@ -46,6 +47,21 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && request.nextUrl.pathname === "/login") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
+  const mustChangePassword = user?.user_metadata?.must_change_password === true;
+  const isChangePasswordPath = request.nextUrl.pathname.startsWith(CHANGE_PASSWORD_PATH);
+
+  if (user && mustChangePassword && !isChangePasswordPath) {
+    const url = request.nextUrl.clone();
+    url.pathname = CHANGE_PASSWORD_PATH;
+    return NextResponse.redirect(url);
+  }
+
+  if (user && !mustChangePassword && isChangePasswordPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

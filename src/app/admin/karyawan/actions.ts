@@ -67,6 +67,7 @@ export async function createEmployee(
     email,
     password: temporaryPassword,
     email_confirm: true,
+    user_metadata: { must_change_password: true },
   });
 
   if (authError || !created.user) {

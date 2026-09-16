@@ -2,8 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { todayInJakarta } from "@/lib/date";
 import type { Attendance, OfficeLocation, Profile } from "@/types/database";
 import { PageHeader } from "@/components/PageHeader";
-import { CheckInOutForm } from "./CheckInOutForm";
-import { OfficeMapLoader } from "@/components/OfficeMapLoader";
+import { AbsensiClient } from "./AbsensiClient";
 
 export default async function AbsensiPage() {
   const supabase = await createClient();
@@ -49,30 +48,7 @@ export default async function AbsensiPage() {
           })}
         </p>
 
-        {office ? (
-          <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
-            <OfficeMapLoader
-              latitude={office.latitude}
-              longitude={office.longitude}
-              radiusMeters={office.radius_meters}
-              name={office.name}
-            />
-            <div className="p-3">
-              <p className="text-sm font-semibold text-gray-900">{office.name}</p>
-              <p className="text-sm text-gray-500">
-                {office.address ?? "Alamat belum diisi."}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-500">
-            Lokasi kantor belum diatur untuk akun Anda. Hubungi HR.
-          </div>
-        )}
-
-        <div className="mt-4">
-          <CheckInOutForm attendance={attendance ?? null} />
-        </div>
+        <AbsensiClient office={office} attendance={attendance ?? null} />
       </div>
     </div>
   );

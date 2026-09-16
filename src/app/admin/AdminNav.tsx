@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admin/gaji", label: "Gaji" },
   { href: "/admin/shift", label: "Shift" },
   { href: "/admin/lokasi", label: "Lokasi Kantor" },
+  { href: "/admin/asset", label: "Asset" },
 ];
 
 export function AdminNav() {

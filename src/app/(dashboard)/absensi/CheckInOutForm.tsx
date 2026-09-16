@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import type { Attendance } from "@/types/database";
+import type { DevicePosition } from "@/components/AbsensiMap";
+import { getCurrentPosition } from "@/lib/geolocation";
 import { checkIn, checkOut, type AttendanceActionState } from "./actions";
 
 function formatTime(iso: string | null) {
@@ -13,20 +15,13 @@ function formatTime(iso: string | null) {
   });
 }
 
-function getCurrentPosition() {
-  return new Promise<GeolocationPosition>((resolve, reject) => {
-    if (!("geolocation" in navigator)) {
-      reject(new Error("Perangkat ini tidak mendukung GPS."));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 15000,
-    });
-  });
-}
-
-export function CheckInOutForm({ attendance }: { attendance: Attendance | null }) {
+export function CheckInOutForm({
+  attendance,
+  onLocated,
+}: {
+  attendance: Attendance | null;
+  onLocated?: (position: DevicePosition) => void;
+}) {
   const [isPending, startTransition] = useTransition();
   const [locating, setLocating] = useState(false);
   const [result, setResult] = useState<AttendanceActionState>({ error: null, success: false });
@@ -41,6 +36,11 @@ export function CheckInOutForm({ attendance }: { attendance: Attendance | null }
     getCurrentPosition()
       .then((position) => {
         setLocating(false);
+        onLocated?.({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
         const formData = new FormData();
         formData.set("latitude", String(position.coords.latitude));
         formData.set("longitude", String(position.coords.longitude));
