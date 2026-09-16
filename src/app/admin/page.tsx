@@ -21,9 +21,11 @@ import {
 } from "@/components/icons";
 import { StatCard } from "./StatCard";
 
-// How many minutes after shift start a check-in counts as "terlambat".
+// How many minutes after shift start a check-in counts as "terlambat", and
+// how many minutes before shift end a check-out counts as "pulang cepat".
 // Not configurable yet — flagged to the user as a placeholder assumption.
 const LATE_GRACE_MINUTES = 15;
+const EARLY_LEAVE_GRACE_MINUTES = 15;
 
 const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
   cuti: "Cuti Tahunan",
@@ -101,6 +103,36 @@ export default async function AdminDashboardPage() {
   lateEntries.sort((a, b) => b.minutesLate - a.minutesLate);
   const lateCount = lateEntries.length;
 
+  type EarlyLeaveEntry = {
+    name: string;
+    checkOutLabel: string;
+    shiftEndLabel: string;
+    minutesEarly: number;
+  };
+  const earlyLeaveEntries: EarlyLeaveEntry[] = [];
+  for (const attendance of presentToday) {
+    if (!attendance.check_out) continue;
+    const member = staffById.get(attendance.user_id)!;
+    const shiftId = attendance.shift_id ?? member.default_shift_id;
+    const shift = shiftId ? shiftById.get(shiftId) : undefined;
+    if (!shift) continue;
+
+    const { hour, minute, label: checkOutLabel } = jakartaHourMinute(attendance.check_out);
+    const [shiftHour, shiftMinute] = shift.end_time.split(":").map(Number);
+    const minutesEarly = shiftHour * 60 + shiftMinute - (hour * 60 + minute);
+
+    if (minutesEarly > EARLY_LEAVE_GRACE_MINUTES) {
+      earlyLeaveEntries.push({
+        name: member.full_name,
+        checkOutLabel,
+        shiftEndLabel: shift.end_time.slice(0, 5),
+        minutesEarly,
+      });
+    }
+  }
+  earlyLeaveEntries.sort((a, b) => b.minutesEarly - a.minutesEarly);
+  const earlyLeaveCount = earlyLeaveEntries.length;
+
   const { data: activeLeaves } = await supabase
     .from("leave_requests")
     .select("*")
@@ -158,6 +190,7 @@ export default async function AdminDashboardPage() {
         <p className="mt-1 text-sm text-white/80">
           {hadirCount} dari {totalStaff} staff sudah hadir
           {lateCount > 0 && `, ${lateCount} terlambat`}
+          {earlyLeaveCount > 0 && `, ${earlyLeaveCount} pulang cepat`}
           {offCount > 0 && `, ${offCount} sedang off/cuti/sakit`}.
         </p>
       </div>
@@ -166,6 +199,7 @@ export default async function AdminDashboardPage() {
         <StatCard label="Total Staff" value={totalStaff} icon={IconUsers} accent="navy" />
         <StatCard label="Hadir Hari Ini" value={hadirCount} icon={IconUsersCheck} accent="green" />
         <StatCard label="Terlambat" value={lateCount} icon={IconClockAlert} accent="amber" />
+        <StatCard label="Pulang Cepat" value={earlyLeaveCount} icon={IconClockAlert} accent="amber" />
         <StatCard label="Off / Cuti / Sakit" value={offCount} icon={IconCalendarOff} accent="red" />
         <StatCard label="Pengajuan Cuti Pending" value={pendingCount} icon={IconInbox} accent="amber" />
         <StatCard label="Total Aset" value={assetCount} icon={IconBriefcase} accent="navy" />
@@ -259,31 +293,53 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">Aset Perusahaan</h2>
-            <Link href="/admin/asset" className="text-xs font-medium text-brand-navy hover:underline">
-              Kelola
-            </Link>
-          </div>
+          <h2 className="text-sm font-semibold text-gray-900">Karyawan Pulang Cepat Hari Ini</h2>
           <div className="mt-3 space-y-2">
-            {Object.keys(assetByStatus).length === 0 && (
-              <p className="text-sm text-gray-500">Belum ada aset terdaftar.</p>
+            {earlyLeaveEntries.length === 0 && (
+              <p className="text-sm text-gray-500">Tidak ada yang pulang cepat hari ini.</p>
             )}
-            {Object.entries(assetByStatus).map(([status, count]) => (
-              <div key={status}>
-                <div className="flex items-center justify-between text-xs text-gray-600">
-                  <span>{status}</span>
-                  <span>{count}</span>
+            {earlyLeaveEntries.slice(0, 6).map((entry) => (
+              <div key={entry.name} className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{entry.name}</p>
+                  <p className="text-xs text-gray-500">
+                    Pulang {entry.checkOutLabel} · shift sampai {entry.shiftEndLabel}
+                  </p>
                 </div>
-                <div className="mt-1 h-2 w-full rounded-full bg-gray-100">
-                  <div
-                    className="h-2 rounded-full bg-brand-navy"
-                    style={{ width: `${(count / maxAssetStatusCount) * 100}%` }}
-                  />
-                </div>
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                  -{entry.minutesEarly} mnt
+                </span>
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-900">Aset Perusahaan</h2>
+          <Link href="/admin/asset" className="text-xs font-medium text-brand-navy hover:underline">
+            Kelola
+          </Link>
+        </div>
+        <div className="mt-3 space-y-2">
+          {Object.keys(assetByStatus).length === 0 && (
+            <p className="text-sm text-gray-500">Belum ada aset terdaftar.</p>
+          )}
+          {Object.entries(assetByStatus).map(([status, count]) => (
+            <div key={status}>
+              <div className="flex items-center justify-between text-xs text-gray-600">
+                <span>{status}</span>
+                <span>{count}</span>
+              </div>
+              <div className="mt-1 h-2 w-full rounded-full bg-gray-100">
+                <div
+                  className="h-2 rounded-full bg-brand-navy"
+                  style={{ width: `${(count / maxAssetStatusCount) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
