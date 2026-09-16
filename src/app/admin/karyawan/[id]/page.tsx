@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { JobTitle, OfficeLocation, Profile, WorkShift } from "@/types/database";
 import { EmployeeEditForm } from "../EmployeeEditForm";
+import { ResetPasswordButton } from "../ResetPasswordButton";
 
 export default async function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -53,6 +54,8 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
           {employee.full_name} · NIK {employee.nik}
         </p>
       </div>
+
+      <ResetPasswordButton employeeId={employee.id} />
 
       <EmployeeEditForm
         employee={employee}

@@ -83,6 +83,10 @@ export default function LoginPage() {
               {isPending ? "Memproses..." : "Masuk"}
             </button>
           </form>
+
+          <p className="mt-4 text-center text-xs text-gray-400">
+            Lupa password? Hubungi HR untuk mereset akun Anda.
+          </p>
         </div>
       </div>
     </div>

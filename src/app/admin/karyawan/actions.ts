@@ -116,6 +116,30 @@ export async function createEmployee(
   return { error: null, success: true, temporaryPassword };
 }
 
+export async function resetEmployeePassword(id: string): Promise<EmployeeActionState> {
+  let supabaseAdmin: ReturnType<typeof createAdminClient>;
+  try {
+    supabaseAdmin = createAdminClient();
+  } catch {
+    return {
+      error: "Konfigurasi server belum lengkap (SUPABASE_SERVICE_ROLE_KEY belum di-set). Hubungi developer.",
+      success: false,
+    };
+  }
+
+  const temporaryPassword = generateTemporaryPassword();
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+    password: temporaryPassword,
+    user_metadata: { must_change_password: true },
+  });
+
+  if (error) {
+    return { error: "Gagal mereset password.", success: false };
+  }
+
+  return { error: null, success: true, temporaryPassword };
+}
+
 export async function updateEmployee(
   id: string,
   _prevState: EmployeeActionState,
