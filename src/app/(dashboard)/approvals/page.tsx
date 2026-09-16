@@ -33,64 +33,64 @@ export default async function ApprovalsPage() {
     profile?.role === "supervisor"
       ? membersQuery.eq("supervisor_id", user!.id)
       : membersQuery.neq("id", user!.id);
-  const { data: members } = await membersQuery.order("full_name").returns<Profile[]>();
 
-  const memberIds = (members ?? []).map((m) => m.id);
   const today = todayInJakarta();
 
-  let hadirCount = 0;
-  let cutiCount = 0;
-
-  if (memberIds.length > 0) {
-    const { count: hadir } = await supabase
-      .from("attendances")
-      .select("*", { count: "exact", head: true })
-      .in("user_id", memberIds)
-      .eq("date", today)
-      .not("check_in", "is", null);
-    hadirCount = hadir ?? 0;
-
-    const { count: cuti } = await supabase
+  const [{ data: members }, { data: requests }] = await Promise.all([
+    membersQuery.order("full_name").returns<Profile[]>(),
+    supabase
       .from("leave_requests")
-      .select("*", { count: "exact", head: true })
-      .in("user_id", memberIds)
-      .eq("status", "approved")
-      .lte("start_date", today)
-      .gte("end_date", today);
-    cutiCount = cuti ?? 0;
-  }
+      .select("*")
+      .eq("status", "pending")
+      .order("start_date", { ascending: true })
+      .returns<LeaveRequest[]>(),
+  ]);
 
-  const { data: requests } = await supabase
-    .from("leave_requests")
-    .select("*")
-    .eq("status", "pending")
-    .order("start_date", { ascending: true })
-    .returns<LeaveRequest[]>();
-
+  const memberIds = (members ?? []).map((m) => m.id);
   const userIds = [...new Set((requests ?? []).map((r) => r.user_id))];
   const requesterNames = new Map<string, string>();
   const documentUrls = new Map<string, string>();
 
-  if (userIds.length > 0) {
-    const { data: requesters } = await supabase
-      .from("profiles")
-      .select("*")
-      .in("id", userIds)
-      .returns<Profile[]>();
+  const [counts, { data: requesters }, signedUrlResults] = await Promise.all([
+    memberIds.length > 0
+      ? Promise.all([
+          supabase
+            .from("attendances")
+            .select("*", { count: "exact", head: true })
+            .in("user_id", memberIds)
+            .eq("date", today)
+            .not("check_in", "is", null),
+          supabase
+            .from("leave_requests")
+            .select("*", { count: "exact", head: true })
+            .in("user_id", memberIds)
+            .eq("status", "approved")
+            .lte("start_date", today)
+            .gte("end_date", today),
+        ])
+      : Promise.resolve([{ count: 0 }, { count: 0 }] as const),
+    userIds.length > 0
+      ? supabase.from("profiles").select("*").in("id", userIds).returns<Profile[]>()
+      : Promise.resolve({ data: [] as Profile[] }),
+    Promise.all(
+      (requests ?? [])
+        .filter((request) => request.document_url)
+        .map(async (request) => ({
+          id: request.id,
+          result: await supabase.storage.from("leave-documents").createSignedUrl(request.document_url!, 60 * 10),
+        }))
+    ),
+  ]);
 
-    for (const requester of requesters ?? []) {
-      requesterNames.set(requester.id, requester.full_name);
-    }
+  const hadirCount = counts[0].count ?? 0;
+  const cutiCount = counts[1].count ?? 0;
+
+  for (const requester of requesters ?? []) {
+    requesterNames.set(requester.id, requester.full_name);
   }
-
-  for (const request of requests ?? []) {
-    if (request.document_url) {
-      const { data } = await supabase.storage
-        .from("leave-documents")
-        .createSignedUrl(request.document_url, 60 * 10);
-      if (data?.signedUrl) {
-        documentUrls.set(request.id, data.signedUrl);
-      }
+  for (const { id, result } of signedUrlResults) {
+    if (result.data?.signedUrl) {
+      documentUrls.set(id, result.data.signedUrl);
     }
   }
 

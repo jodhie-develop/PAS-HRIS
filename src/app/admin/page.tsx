@@ -59,23 +59,41 @@ export default async function AdminDashboardPage() {
   const supabase = await createClient();
   const today = todayInJakarta();
 
-  const { data: staff } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("is_active", true)
-    .returns<Profile[]>();
+  const [
+    { data: staff },
+    { data: shifts },
+    { data: todaysAttendance },
+    { data: activeLeaves },
+    { data: pendingLeaves },
+    { data: announcements },
+    { data: assets },
+  ] = await Promise.all([
+    supabase.from("profiles").select("*").eq("is_active", true).returns<Profile[]>(),
+    supabase.from("work_shifts").select("*").returns<WorkShift[]>(),
+    supabase.from("attendances").select("*").eq("date", today).returns<Attendance[]>(),
+    supabase
+      .from("leave_requests")
+      .select("*")
+      .eq("status", "approved")
+      .lte("start_date", today)
+      .gte("end_date", today)
+      .returns<LeaveRequest[]>(),
+    supabase
+      .from("leave_requests")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .returns<LeaveRequest[]>(),
+    supabase.from("announcements").select("*").order("created_at", { ascending: false }).returns<Announcement[]>(),
+    supabase.from("company_assets").select("*").returns<CompanyAsset[]>(),
+  ]);
+
   const staffList = staff ?? [];
   const staffById = new Map(staffList.map((s) => [s.id, s]));
   const totalStaff = staffList.length;
 
-  const { data: shifts } = await supabase.from("work_shifts").select("*").returns<WorkShift[]>();
   const shiftById = new Map((shifts ?? []).map((s) => [s.id, s]));
 
-  const { data: todaysAttendance } = await supabase
-    .from("attendances")
-    .select("*")
-    .eq("date", today)
-    .returns<Attendance[]>();
   const presentToday = (todaysAttendance ?? []).filter((a) => a.check_in && staffById.has(a.user_id));
   const hadirCount = presentToday.length;
 
@@ -133,13 +151,6 @@ export default async function AdminDashboardPage() {
   earlyLeaveEntries.sort((a, b) => b.minutesEarly - a.minutesEarly);
   const earlyLeaveCount = earlyLeaveEntries.length;
 
-  const { data: activeLeaves } = await supabase
-    .from("leave_requests")
-    .select("*")
-    .eq("status", "approved")
-    .lte("start_date", today)
-    .gte("end_date", today)
-    .returns<LeaveRequest[]>();
   const leavesToday = (activeLeaves ?? []).filter((l) => staffById.has(l.user_id));
   const offCount = leavesToday.length;
   const leaveByType = leavesToday.reduce<Partial<Record<LeaveType, number>>>((acc, l) => {
@@ -147,24 +158,12 @@ export default async function AdminDashboardPage() {
     return acc;
   }, {});
 
-  const { data: pendingLeaves } = await supabase
-    .from("leave_requests")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false })
-    .returns<LeaveRequest[]>();
   const pendingCount = (pendingLeaves ?? []).length;
   const recentPending = (pendingLeaves ?? []).slice(0, 5);
 
-  const { data: announcements } = await supabase
-    .from("announcements")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .returns<Announcement[]>();
   const announcementCount = (announcements ?? []).length;
   const recentAnnouncements = (announcements ?? []).slice(0, 4);
 
-  const { data: assets } = await supabase.from("company_assets").select("*").returns<CompanyAsset[]>();
   const assetList = assets ?? [];
   const assetCount = assetList.length;
   const assetByStatus = assetList.reduce<Record<string, number>>((acc, a) => {

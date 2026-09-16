@@ -10,22 +10,20 @@ export default async function DocumentsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user!.id)
-    .single<Profile>();
-
-  const { data: documents } = await supabase
-    .from("documents")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .returns<AppDocument[]>();
+  const [{ data: profile }, { data: documents }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user!.id).single<Profile>(),
+    supabase.from("documents").select("*").order("created_at", { ascending: false }).returns<AppDocument[]>(),
+  ]);
 
   const downloadUrls = new Map<string, string>();
-  for (const document of documents ?? []) {
-    const { data } = await supabase.storage.from("documents").createSignedUrl(document.file_url, 60 * 10);
-    if (data?.signedUrl) downloadUrls.set(document.id, data.signedUrl);
+  const signedUrlResults = await Promise.all(
+    (documents ?? []).map(async (document) => ({
+      id: document.id,
+      result: await supabase.storage.from("documents").createSignedUrl(document.file_url, 60 * 10),
+    }))
+  );
+  for (const { id, result } of signedUrlResults) {
+    if (result.data?.signedUrl) downloadUrls.set(id, result.data.signedUrl);
   }
 
   return (

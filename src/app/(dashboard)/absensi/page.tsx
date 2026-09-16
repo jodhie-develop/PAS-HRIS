@@ -11,18 +11,15 @@ export default async function AbsensiPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: attendance } = await supabase
-    .from("attendances")
-    .select("*")
-    .eq("user_id", user!.id)
-    .eq("date", todayInJakarta())
-    .maybeSingle<Attendance>();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user!.id)
-    .single<Profile>();
+  const [{ data: attendance }, { data: profile }] = await Promise.all([
+    supabase
+      .from("attendances")
+      .select("*")
+      .eq("user_id", user!.id)
+      .eq("date", todayInJakarta())
+      .maybeSingle<Attendance>(),
+    supabase.from("profiles").select("*").eq("id", user!.id).single<Profile>(),
+  ]);
 
   let office: OfficeLocation | null = null;
   if (profile?.office_location_id) {

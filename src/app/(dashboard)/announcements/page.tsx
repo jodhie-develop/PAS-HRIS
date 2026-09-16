@@ -19,43 +19,34 @@ export default async function AnnouncementsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user!.id)
-    .single<Profile>();
-
-  const { data: announcements } = await supabase
-    .from("announcements")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .returns<Announcement[]>();
+  const [{ data: profile }, { data: announcements }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user!.id).single<Profile>(),
+    supabase.from("announcements").select("*").order("created_at", { ascending: false }).returns<Announcement[]>(),
+  ]);
 
   const authorIds = [...new Set((announcements ?? []).map((a) => a.created_by).filter((id): id is string => !!id))];
   const authorNames = new Map<string, string>();
-
-  if (authorIds.length > 0) {
-    const { data: authors } = await supabase
-      .from("profiles")
-      .select("*")
-      .in("id", authorIds)
-      .returns<Profile[]>();
-
-    for (const author of authors ?? []) {
-      authorNames.set(author.id, author.full_name);
-    }
-  }
-
   const attachmentUrls = new Map<string, string>();
-  for (const announcement of announcements ?? []) {
-    if (announcement.file_url) {
-      const { data } = await supabase.storage
-        .from("announcements")
-        .createSignedUrl(announcement.file_url, 60 * 10);
-      if (data?.signedUrl) {
-        attachmentUrls.set(announcement.id, data.signedUrl);
-      }
-    }
+
+  const [{ data: authors }, signedUrlResults] = await Promise.all([
+    authorIds.length > 0
+      ? supabase.from("profiles").select("*").in("id", authorIds).returns<Profile[]>()
+      : Promise.resolve({ data: [] as Profile[] }),
+    Promise.all(
+      (announcements ?? [])
+        .filter((announcement) => announcement.file_url)
+        .map(async (announcement) => ({
+          id: announcement.id,
+          result: await supabase.storage.from("announcements").createSignedUrl(announcement.file_url!, 60 * 10),
+        }))
+    ),
+  ]);
+
+  for (const author of authors ?? []) {
+    authorNames.set(author.id, author.full_name);
+  }
+  for (const { id, result } of signedUrlResults) {
+    if (result.data?.signedUrl) attachmentUrls.set(id, result.data.signedUrl);
   }
 
   return (

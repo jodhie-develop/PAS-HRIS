@@ -46,14 +46,17 @@ export default async function LeavePage() {
     .returns<LeaveRequest[]>();
 
   const documentUrls = new Map<string, string>();
-  for (const request of requests ?? []) {
-    if (request.document_url) {
-      const { data } = await supabase.storage
-        .from("leave-documents")
-        .createSignedUrl(request.document_url, 60 * 10);
-      if (data?.signedUrl) {
-        documentUrls.set(request.id, data.signedUrl);
-      }
+  const signedUrlResults = await Promise.all(
+    (requests ?? [])
+      .filter((request) => request.document_url)
+      .map(async (request) => ({
+        id: request.id,
+        result: await supabase.storage.from("leave-documents").createSignedUrl(request.document_url!, 60 * 10),
+      }))
+  );
+  for (const { id, result } of signedUrlResults) {
+    if (result.data?.signedUrl) {
+      documentUrls.set(id, result.data.signedUrl);
     }
   }
 

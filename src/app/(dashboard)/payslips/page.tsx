@@ -39,28 +39,29 @@ export default async function PayslipsPage() {
   }
 
   if (profile?.role === "hr_admin") {
-    const { data: employees } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("is_active", true)
-      .order("full_name")
-      .returns<Profile[]>();
-
-    const { data: payslips } = await supabase
-      .from("payslips")
-      .select("*")
-      .order("period_year", { ascending: false })
-      .order("period_month", { ascending: false })
-      .returns<Payslip[]>();
+    const [{ data: employees }, { data: payslips }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("is_active", true).order("full_name").returns<Profile[]>(),
+      supabase
+        .from("payslips")
+        .select("*")
+        .order("period_year", { ascending: false })
+        .order("period_month", { ascending: false })
+        .returns<Payslip[]>(),
+    ]);
 
     const employeeNames = new Map((employees ?? []).map((employee) => [employee.id, employee.full_name]));
 
     const downloadUrls = new Map<string, string>();
-    for (const payslip of payslips ?? []) {
-      if (payslip.pdf_url) {
-        const { data } = await supabase.storage.from("payslips").createSignedUrl(payslip.pdf_url, 60 * 10);
-        if (data?.signedUrl) downloadUrls.set(payslip.id, data.signedUrl);
-      }
+    const signedUrlResults = await Promise.all(
+      (payslips ?? [])
+        .filter((payslip) => payslip.pdf_url)
+        .map(async (payslip) => ({
+          id: payslip.id,
+          result: await supabase.storage.from("payslips").createSignedUrl(payslip.pdf_url!, 60 * 10),
+        }))
+    );
+    for (const { id, result } of signedUrlResults) {
+      if (result.data?.signedUrl) downloadUrls.set(id, result.data.signedUrl);
     }
 
     return (
@@ -125,11 +126,16 @@ export default async function PayslipsPage() {
     .returns<Payslip[]>();
 
   const downloadUrls = new Map<string, string>();
-  for (const payslip of payslips ?? []) {
-    if (payslip.pdf_url) {
-      const { data } = await supabase.storage.from("payslips").createSignedUrl(payslip.pdf_url, 60 * 10);
-      if (data?.signedUrl) downloadUrls.set(payslip.id, data.signedUrl);
-    }
+  const signedUrlResults = await Promise.all(
+    (payslips ?? [])
+      .filter((payslip) => payslip.pdf_url)
+      .map(async (payslip) => ({
+        id: payslip.id,
+        result: await supabase.storage.from("payslips").createSignedUrl(payslip.pdf_url!, 60 * 10),
+      }))
+  );
+  for (const { id, result } of signedUrlResults) {
+    if (result.data?.signedUrl) downloadUrls.set(id, result.data.signedUrl);
   }
 
   return (
