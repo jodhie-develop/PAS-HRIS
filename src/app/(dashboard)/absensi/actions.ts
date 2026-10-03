@@ -1,14 +1,47 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { distanceInMeters } from "@/lib/geo";
+import { LOCATION_SAMPLE_COUNT } from "@/lib/geolocation";
 import { todayInJakarta } from "@/lib/date";
-import type { OfficeLocation, Profile } from "@/types/database";
+import type { AttendanceLocationSample, OfficeLocation, Profile } from "@/types/database";
 
 export interface AttendanceActionState {
   error: string | null;
   success: boolean;
+}
+
+function parseLocationSamples(formData: FormData): AttendanceLocationSample[] | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(String(formData.get("locations")));
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(raw) || raw.length !== LOCATION_SAMPLE_COUNT) return null;
+
+  const samples: AttendanceLocationSample[] = [];
+  for (const item of raw) {
+    const sample = {
+      lat: Number(item?.lat),
+      lng: Number(item?.lng),
+      accuracy: Number(item?.accuracy),
+      timestamp: Number(item?.timestamp),
+    };
+    if (!Object.values(sample).every(Number.isFinite)) return null;
+    samples.push(sample);
+  }
+  return samples;
+}
+
+// On Vercel the client IP is the first entry of x-forwarded-for; locally it
+// is usually ::1 or 127.0.0.1.
+async function getClientIp() {
+  const h = await headers();
+  const forwarded = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwarded || h.get("x-real-ip") || null;
 }
 
 async function getProfileAndOffice(userId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -35,12 +68,15 @@ export async function checkIn(
   _prevState: AttendanceActionState,
   formData: FormData
 ): Promise<AttendanceActionState> {
-  const latitude = Number(formData.get("latitude"));
-  const longitude = Number(formData.get("longitude"));
+  const locations = parseLocationSamples(formData);
 
-  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+  if (!locations) {
     return { error: "Lokasi tidak terdeteksi. Aktifkan GPS dan coba lagi.", success: false };
   }
+
+  // The last reading is the most settled GPS fix, so it is the one checked
+  // against the office radius and kept in the latitude/longitude columns.
+  const { lat: latitude, lng: longitude } = locations[locations.length - 1];
 
   const supabase = await createClient();
   const {
@@ -71,6 +107,8 @@ export async function checkIn(
     check_in: new Date().toISOString(),
     check_in_latitude: latitude,
     check_in_longitude: longitude,
+    check_in_locations: locations,
+    check_in_ip: await getClientIp(),
     shift_id: profile?.default_shift_id ?? null,
     office_location_id: office.id,
   });
@@ -90,12 +128,15 @@ export async function checkOut(
   _prevState: AttendanceActionState,
   formData: FormData
 ): Promise<AttendanceActionState> {
-  const latitude = Number(formData.get("latitude"));
-  const longitude = Number(formData.get("longitude"));
+  const locations = parseLocationSamples(formData);
 
-  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+  if (!locations) {
     return { error: "Lokasi tidak terdeteksi. Aktifkan GPS dan coba lagi.", success: false };
   }
+
+  // The last reading is the most settled GPS fix, so it is the one checked
+  // against the office radius and kept in the latitude/longitude columns.
+  const { lat: latitude, lng: longitude } = locations[locations.length - 1];
 
   const supabase = await createClient();
   const {
@@ -112,6 +153,8 @@ export async function checkOut(
       check_out: new Date().toISOString(),
       check_out_latitude: latitude,
       check_out_longitude: longitude,
+      check_out_locations: locations,
+      check_out_ip: await getClientIp(),
     })
     .eq("user_id", user.id)
     .eq("date", todayInJakarta())

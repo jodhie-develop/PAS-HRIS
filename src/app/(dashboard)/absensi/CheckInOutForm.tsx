@@ -3,7 +3,11 @@
 import { useState, useTransition } from "react";
 import type { Attendance } from "@/types/database";
 import type { DevicePosition } from "@/components/AbsensiMap";
-import { getCurrentPosition } from "@/lib/geolocation";
+import {
+  getPositionSamples,
+  LOCATION_SAMPLE_COUNT,
+  LOCATION_SAMPLE_INTERVAL_MS,
+} from "@/lib/geolocation";
 import { checkIn, checkOut, type AttendanceActionState } from "./actions";
 
 function formatTime(iso: string | null) {
@@ -24,6 +28,7 @@ export function CheckInOutForm({
 }) {
   const [isPending, startTransition] = useTransition();
   const [locating, setLocating] = useState(false);
+  const [samplesTaken, setSamplesTaken] = useState(0);
   const [result, setResult] = useState<AttendanceActionState>({ error: null, success: false });
 
   const hasCheckedIn = Boolean(attendance?.check_in);
@@ -32,18 +37,15 @@ export function CheckInOutForm({
   function handle(action: typeof checkIn) {
     setResult({ error: null, success: false });
     setLocating(true);
+    setSamplesTaken(0);
 
-    getCurrentPosition()
-      .then((position) => {
+    getPositionSamples(LOCATION_SAMPLE_COUNT, LOCATION_SAMPLE_INTERVAL_MS, setSamplesTaken)
+      .then((samples) => {
         setLocating(false);
-        onLocated?.({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        });
+        const last = samples[samples.length - 1];
+        onLocated?.({ lat: last.lat, lng: last.lng, accuracy: last.accuracy });
         const formData = new FormData();
-        formData.set("latitude", String(position.coords.latitude));
-        formData.set("longitude", String(position.coords.longitude));
+        formData.set("locations", JSON.stringify(samples));
 
         startTransition(async () => {
           const outcome = await action({ error: null, success: false }, formData);
@@ -82,7 +84,7 @@ export function CheckInOutForm({
             onClick={() => handle(checkIn)}
             className="w-full rounded-md bg-brand-red px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            {locating ? "Mengambil lokasi..." : isPending ? "Menyimpan..." : "Check In"}
+            {locating ? `Mengambil lokasi (${samplesTaken}/${LOCATION_SAMPLE_COUNT})...` : isPending ? "Menyimpan..." : "Check In"}
           </button>
         )}
 
@@ -93,7 +95,7 @@ export function CheckInOutForm({
             onClick={() => handle(checkOut)}
             className="w-full rounded-md bg-brand-red px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            {locating ? "Mengambil lokasi..." : isPending ? "Menyimpan..." : "Check Out"}
+            {locating ? `Mengambil lokasi (${samplesTaken}/${LOCATION_SAMPLE_COUNT})...` : isPending ? "Menyimpan..." : "Check Out"}
           </button>
         )}
 

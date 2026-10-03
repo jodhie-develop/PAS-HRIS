@@ -67,8 +67,20 @@ export type Attendance = {
   check_out_longitude: number | null;
   check_in_photo_url: string | null;
   check_out_photo_url: string | null;
+  check_in_ip: string | null;
+  check_out_ip: string | null;
+  check_in_locations: AttendanceLocationSample[] | null;
+  check_out_locations: AttendanceLocationSample[] | null;
   notes: string | null;
   created_at: string;
+};
+
+// One GPS reading; each check-in/out stores several, taken a few seconds apart.
+export type AttendanceLocationSample = {
+  lat: number;
+  lng: number;
+  accuracy: number;
+  timestamp: number;
 };
 
 export type LeaveRequest = {
@@ -238,6 +250,10 @@ export type AttendanceInsert = {
   check_out_longitude?: number | null;
   check_in_photo_url?: string | null;
   check_out_photo_url?: string | null;
+  check_in_ip?: string | null;
+  check_out_ip?: string | null;
+  check_in_locations?: AttendanceLocationSample[] | null;
+  check_out_locations?: AttendanceLocationSample[] | null;
   notes?: string | null;
 };
 export type AttendanceUpdate = {
@@ -251,6 +267,10 @@ export type AttendanceUpdate = {
   check_out_longitude?: number | null;
   check_in_photo_url?: string | null;
   check_out_photo_url?: string | null;
+  check_in_ip?: string | null;
+  check_out_ip?: string | null;
+  check_in_locations?: AttendanceLocationSample[] | null;
+  check_out_locations?: AttendanceLocationSample[] | null;
   notes?: string | null;
 };
 
