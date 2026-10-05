@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/types/database";
 import { signOut } from "./actions";
 import InstallAppButton from "@/components/InstallAppButton";
+import { PushToggle } from "@/components/PushToggle";
 import {
   IconBanknote,
   IconBell,
@@ -112,6 +113,7 @@ export default async function HomePage() {
       </div>
 
       <div className="bg-dot-pattern -mt-6 rounded-t-3xl bg-background px-4 pt-6 pb-10">
+        {role !== "employee" && <PushToggle compact />}
         <Link
           href="/announcements"
           className="flex items-center justify-center gap-2 rounded-full border border-brand-red bg-white px-4 py-2.5 text-sm font-semibold text-brand-red shadow-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm"

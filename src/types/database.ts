@@ -258,6 +258,30 @@ export type AppNotificationUpdate = {
   read_at?: string | null;
 };
 
+// One browser/device a user enabled push on (Web Push subscription).
+export type PushSubscriptionRow = {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+};
+export type PushSubscriptionInsert = {
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent?: string | null;
+};
+export type PushSubscriptionUpdate = {
+  user_id?: string;
+  p256dh?: string;
+  auth?: string;
+  user_agent?: string | null;
+};
+
 // Company-declared non-working days (libur nasional / cuti bersama). They
 // don't count against the annual leave quota.
 export type PublicHoliday = {
@@ -469,6 +493,12 @@ export type Database = {
         Row: AppNotification;
         Insert: AppNotificationInsert;
         Update: AppNotificationUpdate;
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: PushSubscriptionRow;
+        Insert: PushSubscriptionInsert;
+        Update: PushSubscriptionUpdate;
         Relationships: [];
       };
       public_holidays: {

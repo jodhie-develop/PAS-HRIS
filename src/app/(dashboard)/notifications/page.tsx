@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AppNotification } from "@/types/database";
 import { PageHeader } from "@/components/PageHeader";
+import { PushToggle } from "@/components/PushToggle";
 import { markAllNotificationsRead } from "./actions";
 import { NotificationItem } from "./NotificationItem";
 
@@ -26,6 +27,8 @@ export default async function NotificationsPage() {
     <div>
       <PageHeader title="Notifikasi" />
       <div className="space-y-3 p-4">
+        <PushToggle />
+
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500">
             {unreadCount > 0 ? `${unreadCount} belum dibaca` : "Semua sudah dibaca"}

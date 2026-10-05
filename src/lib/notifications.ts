@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendPush } from "@/lib/push";
 import type { AppNotificationInsert, Profile } from "@/types/database";
 
 // Server-only. Notifications are inserted with the service-role client so
@@ -41,5 +42,16 @@ export async function notify(
     if (error) console.error("notify failed:", error.message);
   } catch (error) {
     console.error("notify failed:", error);
+  }
+
+  // Also pop it up on the recipients' phones, even with the app closed.
+  try {
+    await sendPush(recipientIds, {
+      title: notification.title,
+      body: notification.body ?? undefined,
+      url: notification.link ?? "/notifications",
+    });
+  } catch (error) {
+    console.error("push failed:", error);
   }
 }

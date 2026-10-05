@@ -5,6 +5,8 @@ const withPWA = withPWAInit({
   dest: "public",
   cacheOnFrontEndNav: true,
   reloadOnOnline: true,
+  // Push notification handlers (src/worker/index.ts), bundled into sw.js.
+  customWorkerSrc: "src/worker",
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
