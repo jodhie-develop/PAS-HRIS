@@ -12,7 +12,12 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      // "Anywhere" check-in/out uploads a selfie (capped at 2MB in the action).
+      bodySizeLimit: "3mb",
+    },
+  },
 };
 
 export default withPWA(nextConfig);

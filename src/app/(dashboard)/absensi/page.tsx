@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { todayInJakarta } from "@/lib/date";
+import { ATTENDANCE_PHOTO_BUCKET } from "@/lib/attendance-photos";
 import type { Attendance, OfficeLocation, Profile } from "@/types/database";
 import { PageHeader } from "@/components/PageHeader";
-import { AbsensiClient } from "./AbsensiClient";
+import { AbsensiClient, type TodayPhotos } from "./AbsensiClient";
 
 export default async function AbsensiPage() {
   const supabase = await createClient();
@@ -31,6 +32,17 @@ export default async function AbsensiPage() {
     office = data ?? null;
   }
 
+  const photos: TodayPhotos = { checkIn: null, checkOut: null };
+  const photoPaths = [attendance?.check_in_photo_url, attendance?.check_out_photo_url].filter(
+    (path): path is string => Boolean(path)
+  );
+  if (photoPaths.length > 0) {
+    const { data: signed } = await supabase.storage.from(ATTENDANCE_PHOTO_BUCKET).createSignedUrls(photoPaths, 60 * 60);
+    const urlByPath = new Map((signed ?? []).map((item) => [item.path, item.signedUrl]));
+    photos.checkIn = (attendance?.check_in_photo_url && urlByPath.get(attendance.check_in_photo_url)) || null;
+    photos.checkOut = (attendance?.check_out_photo_url && urlByPath.get(attendance.check_out_photo_url)) || null;
+  }
+
   return (
     <div>
       <PageHeader title="Kehadiran" />
@@ -45,7 +57,13 @@ export default async function AbsensiPage() {
           })}
         </p>
 
-        <AbsensiClient office={office} attendance={attendance ?? null} />
+        <AbsensiClient
+          office={office}
+          attendance={attendance ?? null}
+          mode={profile?.attendance_mode ?? "office"}
+          employeeName={profile?.full_name ?? user!.email ?? ""}
+          photos={photos}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { todayInJakarta } from "@/lib/date";
+import { ATTENDANCE_PHOTO_BUCKET } from "@/lib/attendance-photos";
 import type {
   Announcement,
   Attendance,
@@ -173,6 +174,44 @@ export default async function AdminDashboardPage() {
   }, {});
   const maxAssetStatusCount = Math.max(1, ...Object.values(assetByStatus));
 
+  // "Anywhere" check-ins carry selfies; HR reviews them here. Signed in one
+  // batch since the bucket is private.
+  const anywhereToday = (todaysAttendance ?? []).filter(
+    (a) => (a.check_in_photo_url || a.check_out_photo_url) && staffById.has(a.user_id)
+  );
+  const anywherePhotoPaths = anywhereToday.flatMap((a) =>
+    [a.check_in_photo_url, a.check_out_photo_url].filter((path): path is string => Boolean(path))
+  );
+  const signedPhotoByPath = new Map<string, string>();
+  if (anywherePhotoPaths.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from(ATTENDANCE_PHOTO_BUCKET)
+      .createSignedUrls(anywherePhotoPaths, 60 * 60);
+    for (const item of signed ?? []) {
+      if (item.path && item.signedUrl) signedPhotoByPath.set(item.path, item.signedUrl);
+    }
+  }
+  const anywhereEntries = anywhereToday.map((a) => ({
+    id: a.id,
+    name: staffById.get(a.user_id)!.full_name,
+    checkIn: {
+      time: a.check_in ? jakartaHourMinute(a.check_in).label : null,
+      photo: a.check_in_photo_url ? (signedPhotoByPath.get(a.check_in_photo_url) ?? null) : null,
+      mapUrl:
+        a.check_in_latitude !== null && a.check_in_longitude !== null
+          ? `https://www.google.com/maps?q=${a.check_in_latitude},${a.check_in_longitude}`
+          : null,
+    },
+    checkOut: {
+      time: a.check_out ? jakartaHourMinute(a.check_out).label : null,
+      photo: a.check_out_photo_url ? (signedPhotoByPath.get(a.check_out_photo_url) ?? null) : null,
+      mapUrl:
+        a.check_out_latitude !== null && a.check_out_longitude !== null
+          ? `https://www.google.com/maps?q=${a.check_out_latitude},${a.check_out_longitude}`
+          : null,
+    },
+  }));
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-brand-red to-brand-red-dark p-6 text-white shadow-sm">
@@ -311,6 +350,60 @@ export default async function AdminDashboardPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-gray-900">Absensi Anywhere Hari Ini</h2>
+        <p className="text-xs text-gray-500">Selfie &amp; lokasi GPS karyawan mode Anywhere.</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {anywhereEntries.length === 0 && (
+            <p className="text-sm text-gray-500">Belum ada absensi Anywhere hari ini.</p>
+          )}
+          {anywhereEntries.map((entry) => (
+            <div key={entry.id} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+              <p className="text-sm font-medium text-gray-900">{entry.name}</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {[
+                  { label: "Masuk", ...entry.checkIn },
+                  { label: "Pulang", ...entry.checkOut },
+                ].map((slot) => (
+                  <div key={slot.label}>
+                    {slot.photo ? (
+                      <a href={slot.photo} target="_blank" rel="noopener noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed Storage URL */}
+                        <img
+                          src={slot.photo}
+                          alt={`Selfie ${slot.label} ${entry.name}`}
+                          className="aspect-square w-full rounded-md object-cover"
+                        />
+                      </a>
+                    ) : (
+                      <div className="flex aspect-square w-full items-center justify-center rounded-md bg-white text-xs text-gray-400">
+                        Belum ada
+                      </div>
+                    )}
+                    <p className="mt-1 text-xs text-gray-600">
+                      {slot.label} {slot.time ?? "--:--"}
+                      {slot.mapUrl && (
+                        <>
+                          {" · "}
+                          <a
+                            href={slot.mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-brand-navy hover:underline"
+                          >
+                            Lokasi
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

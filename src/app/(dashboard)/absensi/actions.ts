@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { distanceInMeters } from "@/lib/geo";
 import { LOCATION_SAMPLE_COUNT } from "@/lib/geolocation";
 import { todayInJakarta } from "@/lib/date";
+import { ATTENDANCE_PHOTO_BUCKET } from "@/lib/attendance-photos";
 import type { AttendanceLocationSample, OfficeLocation, Profile } from "@/types/database";
 
 export interface AttendanceActionState {
@@ -34,6 +35,31 @@ function parseLocationSamples(formData: FormData): AttendanceLocationSample[] | 
     samples.push(sample);
   }
   return samples;
+}
+
+const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+
+function readPhoto(formData: FormData): File | null {
+  const photo = formData.get("photo");
+  if (!(photo instanceof File) || photo.size === 0 || photo.size > MAX_PHOTO_BYTES) return null;
+  if (photo.type !== "image/jpeg") return null;
+  return photo;
+}
+
+// Stored under the user's own folder (the bucket's RLS requires it). The
+// timestamp keeps a retry after a failed save from colliding with the
+// earlier upload, since the bucket doesn't allow overwrites.
+async function uploadPhoto(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  kind: "checkin" | "checkout",
+  photo: File
+) {
+  const path = `${userId}/${todayInJakarta()}/${kind}-${Date.now()}.jpg`;
+  const { error } = await supabase.storage
+    .from(ATTENDANCE_PHOTO_BUCKET)
+    .upload(path, photo, { contentType: "image/jpeg", upsert: false });
+  return error ? null : path;
 }
 
 // On Vercel the client IP is the first entry of x-forwarded-for; locally it
@@ -88,17 +114,31 @@ export async function checkIn(
   }
 
   const { profile, office } = await getProfileAndOffice(user.id, supabase);
+  const anywhere = profile?.attendance_mode === "anywhere";
 
-  if (!office) {
-    return { error: "Lokasi kantor belum diatur untuk akun Anda. Hubungi HR.", success: false };
-  }
+  let photoPath: string | null = null;
 
-  const distance = distanceInMeters(latitude, longitude, office.latitude, office.longitude);
-  if (distance > office.radius_meters) {
-    return {
-      error: `Anda berada ${Math.round(distance)}m dari ${office.name}, di luar radius ${office.radius_meters}m yang diizinkan.`,
-      success: false,
-    };
+  if (anywhere) {
+    const photo = readPhoto(formData);
+    if (!photo) {
+      return { error: "Foto selfie wajib untuk absensi Anywhere. Coba ambil foto lagi.", success: false };
+    }
+    photoPath = await uploadPhoto(supabase, user.id, "checkin", photo);
+    if (!photoPath) {
+      return { error: "Gagal mengunggah foto selfie. Coba lagi.", success: false };
+    }
+  } else {
+    if (!office) {
+      return { error: "Lokasi kantor belum diatur untuk akun Anda. Hubungi HR.", success: false };
+    }
+
+    const distance = distanceInMeters(latitude, longitude, office.latitude, office.longitude);
+    if (distance > office.radius_meters) {
+      return {
+        error: `Anda berada ${Math.round(distance)}m dari ${office.name}, di luar radius ${office.radius_meters}m yang diizinkan.`,
+        success: false,
+      };
+    }
   }
 
   const { error } = await supabase.from("attendances").insert({
@@ -109,8 +149,9 @@ export async function checkIn(
     check_in_longitude: longitude,
     check_in_locations: locations,
     check_in_ip: await getClientIp(),
+    check_in_photo_url: photoPath,
     shift_id: profile?.default_shift_id ?? null,
-    office_location_id: office.id,
+    office_location_id: office?.id ?? null,
   });
 
   if (error) {
@@ -147,6 +188,25 @@ export async function checkOut(
     return { error: "Sesi berakhir, silakan masuk kembali.", success: false };
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("attendance_mode")
+    .eq("id", user.id)
+    .single<Pick<Profile, "attendance_mode">>();
+
+  let photoPath: string | null = null;
+
+  if (profile?.attendance_mode === "anywhere") {
+    const photo = readPhoto(formData);
+    if (!photo) {
+      return { error: "Foto selfie wajib untuk absensi Anywhere. Coba ambil foto lagi.", success: false };
+    }
+    photoPath = await uploadPhoto(supabase, user.id, "checkout", photo);
+    if (!photoPath) {
+      return { error: "Gagal mengunggah foto selfie. Coba lagi.", success: false };
+    }
+  }
+
   const { error } = await supabase
     .from("attendances")
     .update({
@@ -155,6 +215,7 @@ export async function checkOut(
       check_out_longitude: longitude,
       check_out_locations: locations,
       check_out_ip: await getClientIp(),
+      check_out_photo_url: photoPath,
     })
     .eq("user_id", user.id)
     .eq("date", todayInJakarta())

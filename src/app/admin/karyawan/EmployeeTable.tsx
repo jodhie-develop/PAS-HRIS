@@ -12,6 +12,7 @@ export type EmployeeRow = {
   supervisorName: string;
   is_active: boolean;
   avatar_url: string | null;
+  anywhere: boolean;
 };
 
 function initials(name: string) {
@@ -89,6 +90,11 @@ export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
                       </div>
                     )}
                     <span className="text-sm font-medium text-gray-900">{employee.full_name}</span>
+                    {employee.anywhere && (
+                      <span className="rounded-full bg-brand-navy/10 px-2 py-0.5 text-[10px] font-semibold text-brand-navy">
+                        Anywhere
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{employee.nik}</td>

@@ -23,6 +23,7 @@ export default async function EmployeesPage() {
     supervisorName: employee.supervisor_id ? profileNames.get(employee.supervisor_id) ?? "-" : "-",
     is_active: employee.is_active,
     avatar_url: employee.avatar_url,
+    anywhere: employee.attendance_mode === "anywhere",
   }));
 
   return (

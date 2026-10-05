@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { JobTitle, UserRole } from "@/types/database";
+import type { AttendanceMode, JobTitle, UserRole } from "@/types/database";
 
 export interface EmployeeActionState {
   error: string | null;
@@ -25,6 +25,7 @@ function readProfileFields(formData: FormData) {
     supervisor_id: String(formData.get("supervisor_id") ?? "") || null,
     office_location_id: String(formData.get("office_location_id") ?? "") || null,
     default_shift_id: String(formData.get("default_shift_id") ?? "") || null,
+    attendance_mode: (formData.get("attendance_mode") === "anywhere" ? "anywhere" : "office") as AttendanceMode,
     phone: String(formData.get("phone") ?? "").trim() || null,
     personal_email: String(formData.get("personal_email") ?? "").trim() || null,
     avatar_url: String(formData.get("avatar_url") ?? "").trim() || null,
@@ -95,6 +96,7 @@ export async function createEmployee(
     supervisor_id: fields.supervisor_id,
     office_location_id: fields.office_location_id,
     default_shift_id: fields.default_shift_id,
+    attendance_mode: fields.attendance_mode,
     ptkp_status: fields.ptkp_status,
     npwp: fields.npwp,
     phone: fields.phone,
@@ -201,6 +203,7 @@ export async function updateEmployee(
       supervisor_id: fields.supervisor_id,
       office_location_id: fields.office_location_id,
       default_shift_id: fields.default_shift_id,
+      attendance_mode: fields.attendance_mode,
       ptkp_status: fields.ptkp_status,
       npwp: fields.npwp,
       phone: fields.phone,

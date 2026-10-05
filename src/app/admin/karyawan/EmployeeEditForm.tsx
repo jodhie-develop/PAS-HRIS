@@ -215,6 +215,20 @@ export function EmployeeEditForm({
             </select>
           </div>
           <div>
+            <label htmlFor="attendance_mode" className="block text-sm font-medium text-gray-700">
+              Mode Absensi
+            </label>
+            <select
+              id="attendance_mode"
+              name="attendance_mode"
+              defaultValue={employee.attendance_mode ?? "office"}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="office">Kantor (wajib dalam radius GPS)</option>
+              <option value="anywhere">Anywhere (di mana saja, wajib selfie)</option>
+            </select>
+          </div>
+          <div>
             <label htmlFor="default_shift_id" className="block text-sm font-medium text-gray-700">
               Shift Default
             </label>

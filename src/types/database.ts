@@ -4,6 +4,10 @@
 // collapses to `never` for every table, not just the offending one.
 export type UserRole = "employee" | "supervisor" | "hr_admin";
 
+// "office": check-in must be within the office radius.
+// "anywhere": no radius check, but every check-in/out requires a live selfie.
+export type AttendanceMode = "office" | "anywhere";
+
 export type LeaveType =
   | "cuti"
   | "sakit"
@@ -30,6 +34,7 @@ export type Profile = {
   join_date: string | null;
   annual_leave_quota: number | null;
   avatar_url: string | null;
+  attendance_mode: AttendanceMode;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -190,6 +195,7 @@ export type ProfileInsert = {
   join_date?: string | null;
   annual_leave_quota?: number | null;
   avatar_url?: string | null;
+  attendance_mode?: AttendanceMode;
   is_active?: boolean;
 };
 export type ProfileUpdate = {
@@ -208,6 +214,7 @@ export type ProfileUpdate = {
   join_date?: string | null;
   annual_leave_quota?: number | null;
   avatar_url?: string | null;
+  attendance_mode?: AttendanceMode;
   is_active?: boolean;
 };
 
