@@ -210,10 +210,15 @@ export function EmployeeCreateForm({
               <option value="">Tidak ada</option>
               {supervisors.map((supervisor) => (
                 <option key={supervisor.id} value={supervisor.id}>
-                  {supervisor.full_name}
+                  {supervisor.role === "hr_admin" ? `${supervisor.full_name} (HR)` : supervisor.full_name}
                 </option>
               ))}
             </select>
+            {!supervisors.some((s) => s.role === "supervisor") && (
+              <p className="mt-1 text-xs text-gray-500">
+                Belum ada karyawan dengan role Supervisor. Ubah dulu role atasan di Master Karyawan.
+              </p>
+            )}
           </div>
           <div>
             <label htmlFor="office_location_id" className="block text-sm font-medium text-gray-700">

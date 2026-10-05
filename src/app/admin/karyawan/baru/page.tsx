@@ -12,7 +12,9 @@ export default async function NewEmployeePage() {
       supabase
         .from("profiles")
         .select("*")
-        .eq("role", "supervisor")
+        // HR admins can approve anyone's leave, so they may be a direct
+        // superior too, not just users with the supervisor role.
+        .in("role", ["supervisor", "hr_admin"])
         .eq("is_active", true)
         .order("full_name")
         .returns<Profile[]>(),

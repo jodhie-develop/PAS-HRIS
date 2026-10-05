@@ -17,7 +17,9 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
       supabase
         .from("profiles")
         .select("*")
-        .eq("role", "supervisor")
+        // HR admins can approve anyone's leave, so they may be a direct
+        // superior too, not just users with the supervisor role.
+        .in("role", ["supervisor", "hr_admin"])
         .eq("is_active", true)
         .order("full_name")
         .returns<Profile[]>(),
