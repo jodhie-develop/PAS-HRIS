@@ -6,6 +6,7 @@ import { signOut } from "./actions";
 import InstallAppButton from "@/components/InstallAppButton";
 import {
   IconBanknote,
+  IconBell,
   IconBriefcase,
   IconCalendarOff,
   IconChart,
@@ -34,11 +35,15 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user!.id)
-    .single<Profile>();
+  const [{ data: profile }, { count: unreadCount }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user!.id).single<Profile>(),
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user!.id)
+      .is("read_at", null),
+  ]);
+  const unread = unreadCount ?? 0;
 
   const role = profile?.role ?? "employee";
 
@@ -60,15 +65,29 @@ export default async function HomePage() {
       <div className="bg-brand-cream px-4 pt-4 pb-10">
         <div className="flex items-center justify-between">
           <Image src="/logo.png" alt="PRS" width={36} height={36} className="drop-shadow-sm" />
-          <form action={signOut}>
-            <button
-              type="submit"
-              aria-label="Keluar"
-              className="rounded-full p-1.5 text-gray-500 transition-colors duration-150 hover:bg-white hover:text-brand-red active:bg-white/70"
+          <div className="flex items-center gap-1">
+            <Link
+              href="/notifications"
+              aria-label={unread > 0 ? `Notifikasi, ${unread} belum dibaca` : "Notifikasi"}
+              className="relative rounded-full p-1.5 text-gray-500 transition-colors duration-150 hover:bg-white hover:text-brand-red active:bg-white/70"
             >
-              <IconLogout className="h-5 w-5" />
-            </button>
-          </form>
+              <IconBell className="h-5 w-5" />
+              {unread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-red px-1 text-[10px] font-semibold leading-none text-white">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
+            </Link>
+            <form action={signOut}>
+              <button
+                type="submit"
+                aria-label="Keluar"
+                className="rounded-full p-1.5 text-gray-500 transition-colors duration-150 hover:bg-white hover:text-brand-red active:bg-white/70"
+              >
+                <IconLogout className="h-5 w-5" />
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-col items-center text-center">

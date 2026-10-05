@@ -233,6 +233,31 @@ export type OfficeLocationUpdate = {
   radius_meters?: number;
 };
 
+export type NotificationType = "late" | "early_leave" | "leave_request";
+
+// In-app notification for one recipient. Rows are written server-side with
+// the service-role client; users can only read and mark their own as read.
+export type AppNotification = {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+export type AppNotificationInsert = {
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  link?: string | null;
+};
+export type AppNotificationUpdate = {
+  read_at?: string | null;
+};
+
 // Company-declared non-working days (libur nasional / cuti bersama). They
 // don't count against the annual leave quota.
 export type PublicHoliday = {
@@ -438,6 +463,12 @@ export type Database = {
         Row: OfficeLocation;
         Insert: OfficeLocationInsert;
         Update: OfficeLocationUpdate;
+        Relationships: [];
+      };
+      notifications: {
+        Row: AppNotification;
+        Insert: AppNotificationInsert;
+        Update: AppNotificationUpdate;
         Relationships: [];
       };
       public_holidays: {

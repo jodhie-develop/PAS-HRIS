@@ -2,6 +2,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { todayInJakarta } from "@/lib/date";
 import { ATTENDANCE_PHOTO_BUCKET } from "@/lib/attendance-photos";
+import {
+  EARLY_LEAVE_GRACE_MINUTES,
+  LATE_GRACE_MINUTES,
+  jakartaHourMinute,
+  minutesEarly as minutesEarlyFor,
+  minutesLate as minutesLateFor,
+} from "@/lib/attendance-rules";
 import type {
   Announcement,
   Attendance,
@@ -22,12 +29,6 @@ import {
 } from "@/components/icons";
 import { StatCard } from "./StatCard";
 
-// How many minutes after shift start a check-in counts as "terlambat", and
-// how many minutes before shift end a check-out counts as "pulang cepat".
-// Not configurable yet — flagged to the user as a placeholder assumption.
-const LATE_GRACE_MINUTES = 15;
-const EARLY_LEAVE_GRACE_MINUTES = 15;
-
 const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
   cuti: "Cuti Tahunan",
   sakit: "Sakit",
@@ -42,18 +43,6 @@ function formatDateShort(date: string) {
     month: "short",
     year: "numeric",
   });
-}
-
-function jakartaHourMinute(iso: string) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Jakarta",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date(iso));
-  const hour = Number(parts.find((p) => p.type === "hour")!.value);
-  const minute = Number(parts.find((p) => p.type === "minute")!.value);
-  return { hour, minute, label: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}` };
 }
 
 export default async function AdminDashboardPage() {
@@ -106,9 +95,8 @@ export default async function AdminDashboardPage() {
     const shift = shiftId ? shiftById.get(shiftId) : undefined;
     if (!shift || !attendance.check_in) continue;
 
-    const { hour, minute, label: checkInLabel } = jakartaHourMinute(attendance.check_in);
-    const [shiftHour, shiftMinute] = shift.start_time.split(":").map(Number);
-    const minutesLate = hour * 60 + minute - (shiftHour * 60 + shiftMinute);
+    const checkInLabel = jakartaHourMinute(attendance.check_in).label;
+    const minutesLate = minutesLateFor(attendance.check_in, shift);
 
     if (minutesLate > LATE_GRACE_MINUTES) {
       lateEntries.push({
@@ -136,9 +124,8 @@ export default async function AdminDashboardPage() {
     const shift = shiftId ? shiftById.get(shiftId) : undefined;
     if (!shift) continue;
 
-    const { hour, minute, label: checkOutLabel } = jakartaHourMinute(attendance.check_out);
-    const [shiftHour, shiftMinute] = shift.end_time.split(":").map(Number);
-    const minutesEarly = shiftHour * 60 + shiftMinute - (hour * 60 + minute);
+    const checkOutLabel = jakartaHourMinute(attendance.check_out).label;
+    const minutesEarly = minutesEarlyFor(attendance.check_out, shift);
 
     if (minutesEarly > EARLY_LEAVE_GRACE_MINUTES) {
       earlyLeaveEntries.push({

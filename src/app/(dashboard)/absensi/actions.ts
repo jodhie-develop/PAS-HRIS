@@ -7,7 +7,15 @@ import { distanceInMeters } from "@/lib/geo";
 import { LOCATION_SAMPLE_COUNT } from "@/lib/geolocation";
 import { todayInJakarta } from "@/lib/date";
 import { ATTENDANCE_PHOTO_BUCKET } from "@/lib/attendance-photos";
-import type { AttendanceLocationSample, OfficeLocation, Profile } from "@/types/database";
+import type { AttendanceLocationSample, OfficeLocation, Profile, WorkShift } from "@/types/database";
+import {
+  EARLY_LEAVE_GRACE_MINUTES,
+  LATE_GRACE_MINUTES,
+  jakartaHourMinute,
+  minutesEarly,
+  minutesLate,
+} from "@/lib/attendance-rules";
+import { notify, supervisorRecipients } from "@/lib/notifications";
 
 export interface AttendanceActionState {
   error: string | null;
@@ -90,6 +98,12 @@ async function getProfileAndOffice(userId: string, supabase: Awaited<ReturnType<
   return { profile, office };
 }
 
+async function getShift(supabase: Awaited<ReturnType<typeof createClient>>, shiftId: string | null) {
+  if (!shiftId) return null;
+  const { data } = await supabase.from("work_shifts").select("*").eq("id", shiftId).maybeSingle<WorkShift>();
+  return data ?? null;
+}
+
 export async function checkIn(
   _prevState: AttendanceActionState,
   formData: FormData
@@ -141,10 +155,11 @@ export async function checkIn(
     }
   }
 
+  const checkInAt = new Date().toISOString();
   const { error } = await supabase.from("attendances").insert({
     user_id: user.id,
     date: todayInJakarta(),
-    check_in: new Date().toISOString(),
+    check_in: checkInAt,
     check_in_latitude: latitude,
     check_in_longitude: longitude,
     check_in_locations: locations,
@@ -159,6 +174,19 @@ export async function checkIn(
       ? "Anda sudah check-in hari ini."
       : "Gagal menyimpan absensi. Coba lagi.";
     return { error: message, success: false };
+  }
+
+  if (profile) {
+    const shift = await getShift(supabase, profile.default_shift_id);
+    const late = shift ? minutesLate(checkInAt, shift) : 0;
+    if (shift && late > LATE_GRACE_MINUTES) {
+      await notify(await supervisorRecipients(profile), {
+        type: "late",
+        title: `${profile.full_name} terlambat ${late} menit`,
+        body: `Check in pukul ${jakartaHourMinute(checkInAt).label} WIB, shift ${shift.shift_name} mulai ${shift.start_time.slice(0, 5)}.`,
+        link: null,
+      });
+    }
   }
 
   revalidatePath("/absensi");
@@ -190,9 +218,9 @@ export async function checkOut(
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("attendance_mode")
+    .select("*")
     .eq("id", user.id)
-    .single<Pick<Profile, "attendance_mode">>();
+    .single<Profile>();
 
   let photoPath: string | null = null;
 
@@ -207,10 +235,11 @@ export async function checkOut(
     }
   }
 
-  const { error } = await supabase
+  const checkOutAt = new Date().toISOString();
+  const { data: updated, error } = await supabase
     .from("attendances")
     .update({
-      check_out: new Date().toISOString(),
+      check_out: checkOutAt,
       check_out_latitude: latitude,
       check_out_longitude: longitude,
       check_out_locations: locations,
@@ -219,10 +248,25 @@ export async function checkOut(
     })
     .eq("user_id", user.id)
     .eq("date", todayInJakarta())
-    .is("check_out", null);
+    .is("check_out", null)
+    .select("shift_id");
 
   if (error) {
     return { error: "Gagal menyimpan absensi. Coba lagi.", success: false };
+  }
+
+  // Only when this call actually recorded the check-out (not a repeat tap).
+  if (profile && updated && updated.length > 0) {
+    const shift = await getShift(supabase, updated[0].shift_id ?? profile.default_shift_id);
+    const early = shift ? minutesEarly(checkOutAt, shift) : 0;
+    if (shift && early > EARLY_LEAVE_GRACE_MINUTES) {
+      await notify(await supervisorRecipients(profile), {
+        type: "early_leave",
+        title: `${profile.full_name} pulang ${early} menit lebih awal`,
+        body: `Check out pukul ${jakartaHourMinute(checkOutAt).label} WIB, shift ${shift.shift_name} sampai ${shift.end_time.slice(0, 5)}.`,
+        link: null,
+      });
+    }
   }
 
   revalidatePath("/absensi");

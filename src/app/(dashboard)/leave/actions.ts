@@ -10,6 +10,7 @@ import {
   countLeaveDays,
   yearsInRange,
 } from "@/lib/leave";
+import { notify, supervisorRecipients } from "@/lib/notifications";
 
 export interface LeaveFormState {
   error: string | null;
@@ -125,6 +126,21 @@ export async function submitLeaveRequest(
 
   if (error) {
     return { error: "Gagal mengirim pengajuan. Coba lagi.", success: false };
+  }
+
+  const { data: requester } = await supabase
+    .from("profiles")
+    .select("id, full_name, supervisor_id")
+    .eq("id", user.id)
+    .single<Pick<Profile, "id" | "full_name" | "supervisor_id">>();
+  if (requester) {
+    const range = startDate === endDate ? formatDate(startDate) : `${formatDate(startDate)} - ${formatDate(endDate)}`;
+    await notify(await supervisorRecipients(requester), {
+      type: "leave_request",
+      title: `${requester.full_name} mengajukan ${LEAVE_TYPE_LABELS[leaveType as LeaveType]}`,
+      body: `${range}. Menunggu persetujuan Anda.`,
+      link: "/approvals",
+    });
   }
 
   revalidatePath("/leave");
