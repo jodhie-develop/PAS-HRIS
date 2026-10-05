@@ -9,8 +9,19 @@ import { UseMyLocationButton } from "./UseMyLocationButton";
 
 const initialState: OfficeLocationActionState = { error: null, success: false };
 
-export function OfficeLocationCard({ office }: { office: OfficeLocation }) {
+export function OfficeLocationCard({
+  office,
+  employeeNames,
+  attendanceCount,
+}: {
+  office: OfficeLocation;
+  // Active assignments block deletion; attendance history does not (the
+  // records are kept with their office unlinked).
+  employeeNames: string[];
+  attendanceCount: number;
+}) {
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -27,6 +38,7 @@ export function OfficeLocationCard({ office }: { office: OfficeLocation }) {
     startDeleteTransition(async () => {
       const result = await deleteOfficeLocation(office.id);
       if (result.error) setDeleteError(result.error);
+      setConfirmingDelete(false);
     });
   }
 
@@ -179,13 +191,64 @@ export function OfficeLocationCard({ office }: { office: OfficeLocation }) {
             <button
               type="button"
               disabled={isDeleting}
-              onClick={handleDelete}
+              onClick={() => {
+                setDeleteError(null);
+                setConfirmingDelete(true);
+              }}
               className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
             >
               Hapus
             </button>
           </div>
         </div>
+        {confirmingDelete && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-gray-700">
+            {employeeNames.length > 0 ? (
+              <>
+                <p className="font-medium text-brand-red">
+                  Tidak bisa dihapus: masih ada {employeeNames.length} karyawan di lokasi ini.
+                </p>
+                <p className="mt-1">{employeeNames.join(", ")}</p>
+                <p className="mt-1">Pindahkan dulu ke lokasi lain di Master Karyawan.</p>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(false)}
+                  className="mt-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700"
+                >
+                  Tutup
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-gray-900">Hapus &quot;{office.name}&quot;?</p>
+                {attendanceCount > 0 && (
+                  <p className="mt-1">
+                    Ada {attendanceCount} riwayat absensi di kantor ini. Riwayatnya tetap tersimpan (jam, GPS, foto),
+                    hanya keterangan kantornya menjadi kosong.
+                  </p>
+                )}
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={handleDelete}
+                    className="rounded-md bg-red-600 px-3 py-1.5 font-medium text-white disabled:opacity-50"
+                  >
+                    {isDeleting ? "Menghapus..." : "Ya, Hapus"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={() => setConfirmingDelete(false)}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
         {deleteError && <p className="mt-2 text-xs text-red-600">{deleteError}</p>}
       </div>
     </div>

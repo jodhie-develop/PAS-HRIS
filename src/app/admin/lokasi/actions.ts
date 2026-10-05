@@ -81,12 +81,27 @@ export async function updateOfficeLocation(
 
 export async function deleteOfficeLocation(id: string): Promise<OfficeLocationActionState> {
   const supabase = await createClient();
+
+  const { data: assigned } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("office_location_id", id)
+    .returns<{ full_name: string }[]>();
+  if (assigned && assigned.length > 0) {
+    return {
+      error: `Masih ada ${assigned.length} karyawan di lokasi ini (${assigned.map((p) => p.full_name).join(", ")}). Pindahkan dulu di Master Karyawan.`,
+      success: false,
+    };
+  }
+
+  // Attendance history doesn't block this: attendances.office_location_id
+  // is ON DELETE SET NULL, so the records stay with the office unlinked.
   const { error } = await supabase.from("office_locations").delete().eq("id", id);
 
   if (error) {
     const message =
       error.code === "23503"
-        ? "Lokasi ini masih dipakai karyawan/absensi, tidak bisa dihapus."
+        ? "Lokasi ini masih dirujuk data lain sehingga tidak bisa dihapus. Hubungi developer."
         : "Gagal menghapus lokasi kantor.";
     return { error: message, success: false };
   }
