@@ -184,3 +184,38 @@ export function IconEyeOff({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconDownload({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+    </svg>
+  );
+}
+
+export function IconShareIos({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 15V3M8 7l4-4 4 4M7 11H5v10h14V11h-2" />
+    </svg>
+  );
+}
+
+export function IconPlusSquare({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <path d="M12 8v8M8 12h8" />
+    </svg>
+  );
+}
+
+export function IconMoreVertical({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="5" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="12" cy="19" r="1" />
+    </svg>
+  );
+}

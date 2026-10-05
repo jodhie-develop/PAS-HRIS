@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/types/database";
 import { signOut } from "./actions";
+import InstallAppButton from "@/components/InstallAppButton";
 import {
   IconBanknote,
   IconBriefcase,
@@ -127,6 +128,8 @@ export default async function HomePage() {
             );
           })}
         </div>
+
+        <InstallAppButton />
       </div>
     </div>
   );

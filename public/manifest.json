@@ -1,9 +1,14 @@
 {
   "name": "PAS HRIS",
   "short_name": "PAS HRIS",
+  "description": "HRIS PT. Prasasti Adyadma Sentosa",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
-  "icons": []
+  "theme_color": "#B3050A",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
 }
