@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { MIN_OFFICE_RADIUS_METERS } from "@/lib/geo";
 
 export interface OfficeLocationActionState {
   error: string | null;
@@ -28,6 +29,9 @@ function validate(fields: ReturnType<typeof parseFields>): string | null {
   }
   if (!Number.isFinite(fields.radius_meters) || fields.radius_meters <= 0) {
     return "Radius tidak valid.";
+  }
+  if (fields.radius_meters < MIN_OFFICE_RADIUS_METERS) {
+    return `Radius minimal ${MIN_OFFICE_RADIUS_METERS} m, karena akurasi GPS HP bisa meleset 10-30 m.`;
   }
   return null;
 }

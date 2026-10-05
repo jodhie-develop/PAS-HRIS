@@ -1,10 +1,11 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Circle, Popup } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Circle, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const officeIcon = L.icon({
+export const officeIcon = L.icon({
   iconUrl:
     "data:image/svg+xml;base64," +
     btoa(
@@ -14,6 +15,16 @@ const officeIcon = L.icon({
   iconAnchor: [16, 32],
   popupAnchor: [0, -32],
 });
+
+// MapContainer only reads `center` on mount; follow the pin when the
+// coordinates are edited (typed in or filled from GPS).
+function FollowPin({ latitude, longitude }: { latitude: number; longitude: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([latitude, longitude], map.getZoom());
+  }, [map, latitude, longitude]);
+  return null;
+}
 
 export function OfficeMap({
   latitude,
@@ -46,6 +57,7 @@ export function OfficeMap({
         radius={radiusMeters}
         pathOptions={{ color: "#B3050A", fillColor: "#B3050A", fillOpacity: 0.1 }}
       />
+      <FollowPin latitude={latitude} longitude={longitude} />
     </MapContainer>
   );
 }

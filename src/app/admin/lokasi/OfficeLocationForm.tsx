@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import { OfficeMapLoader } from "@/components/OfficeMapLoader";
 import { createOfficeLocation, type OfficeLocationActionState } from "./actions";
+import { MIN_OFFICE_RADIUS_METERS } from "@/lib/geo";
+import { UseMyLocationButton } from "./UseMyLocationButton";
 
 const initialState: OfficeLocationActionState = { error: null, success: false };
 
@@ -89,7 +91,7 @@ export function OfficeLocationForm() {
                 id="radius_meters"
                 name="radius_meters"
                 type="number"
-                min={1}
+                min={MIN_OFFICE_RADIUS_METERS}
                 required
                 value={radius}
                 onChange={(event) => setRadius(event.target.value)}
@@ -97,8 +99,14 @@ export function OfficeLocationForm() {
               />
             </div>
           </div>
+          <UseMyLocationButton
+            onLocated={(lat, lng) => {
+              setLatitude(String(lat));
+              setLongitude(String(lng));
+            }}
+          />
           <p className="text-xs text-gray-500">
-            Tip: buka Google Maps, klik kanan pada lokasi kantor, lalu salin koordinat yang muncul.
+            Atau: buka Google Maps, klik kanan pada lokasi kantor, lalu salin koordinat yang muncul.
           </p>
         </div>
 

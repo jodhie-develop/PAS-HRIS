@@ -4,6 +4,8 @@ import { useActionState, useState, useTransition } from "react";
 import type { OfficeLocation } from "@/types/database";
 import { OfficeMapLoader } from "@/components/OfficeMapLoader";
 import { updateOfficeLocation, deleteOfficeLocation, type OfficeLocationActionState } from "./actions";
+import { MIN_OFFICE_RADIUS_METERS } from "@/lib/geo";
+import { UseMyLocationButton } from "./UseMyLocationButton";
 
 const initialState: OfficeLocationActionState = { error: null, success: false };
 
@@ -89,7 +91,7 @@ export function OfficeLocationCard({ office }: { office: OfficeLocation }) {
                 <input
                   name="radius_meters"
                   type="number"
-                  min={1}
+                  min={MIN_OFFICE_RADIUS_METERS}
                   value={radius}
                   onChange={(event) => setRadius(event.target.value)}
                   required
@@ -97,6 +99,12 @@ export function OfficeLocationCard({ office }: { office: OfficeLocation }) {
                 />
               </div>
             </div>
+            <UseMyLocationButton
+              onLocated={(lat, lng) => {
+                setLatitude(String(lat));
+                setLongitude(String(lng));
+              }}
+            />
           </div>
           <div className="overflow-hidden rounded-lg border border-gray-200">
             {previewValid ? (
@@ -154,6 +162,11 @@ export function OfficeLocationCard({ office }: { office: OfficeLocation }) {
             <p className="text-sm font-semibold text-gray-900">{office.name}</p>
             <p className="mt-0.5 text-sm text-gray-500">{office.address ?? "Alamat belum diisi."}</p>
             <p className="mt-1 text-xs text-gray-400">Radius {office.radius_meters}m</p>
+            {office.radius_meters < MIN_OFFICE_RADIUS_METERS && (
+              <p className="mt-1 text-xs font-medium text-brand-red">
+                Radius terlalu kecil, karyawan bisa gagal absen. Edit &amp; ubah minimal {MIN_OFFICE_RADIUS_METERS}m.
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 gap-3">
             <button

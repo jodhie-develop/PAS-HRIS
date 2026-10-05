@@ -24,3 +24,8 @@ export function distanceInMeters(
 
   return EARTH_RADIUS_METERS * c;
 }
+
+// Smallest check-in radius HR may set for an office. Phone GPS is routinely
+// off by 10-30m (more indoors), so anything tighter rejects staff who are
+// genuinely on site.
+export const MIN_OFFICE_RADIUS_METERS = 30;

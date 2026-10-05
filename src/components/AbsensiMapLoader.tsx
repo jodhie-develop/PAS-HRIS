@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { DevicePosition } from "./AbsensiMap";
+import type { DevicePosition, OfficeArea } from "./AbsensiMap";
 
 const AbsensiMap = dynamic(() => import("./AbsensiMap").then((mod) => mod.AbsensiMap), {
   ssr: false,
@@ -12,6 +12,12 @@ const AbsensiMap = dynamic(() => import("./AbsensiMap").then((mod) => mod.Absens
   ),
 });
 
-export function AbsensiMapLoader({ devicePosition }: { devicePosition: DevicePosition }) {
-  return <AbsensiMap devicePosition={devicePosition} />;
+export function AbsensiMapLoader({
+  devicePosition,
+  office,
+}: {
+  devicePosition: DevicePosition;
+  office: OfficeArea | null;
+}) {
+  return <AbsensiMap devicePosition={devicePosition} office={office} />;
 }

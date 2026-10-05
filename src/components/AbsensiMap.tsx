@@ -1,8 +1,10 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Circle, Popup } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Circle, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { officeIcon } from "./OfficeMap";
 
 const deviceIcon = L.icon({
   iconUrl:
@@ -16,8 +18,31 @@ const deviceIcon = L.icon({
 });
 
 export type DevicePosition = { lat: number; lng: number; accuracy: number };
+export type OfficeArea = { lat: number; lng: number; radius: number; name: string };
 
-export function AbsensiMap({ devicePosition }: { devicePosition: DevicePosition }) {
+// Keeps both the device and the whole office radius in view, including after
+// the device position updates on Check In/Out.
+function FitToBoth({ device, office }: { device: [number, number]; office: OfficeArea }) {
+  const map = useMap();
+  const [deviceLat, deviceLng] = device;
+
+  useEffect(() => {
+    const bounds = L.latLng(office.lat, office.lng)
+      .toBounds(office.radius * 2)
+      .extend([deviceLat, deviceLng]);
+    map.fitBounds(bounds, { padding: [24, 24], maxZoom: 18 });
+  }, [map, deviceLat, deviceLng, office.lat, office.lng, office.radius]);
+
+  return null;
+}
+
+export function AbsensiMap({
+  devicePosition,
+  office,
+}: {
+  devicePosition: DevicePosition;
+  office: OfficeArea | null;
+}) {
   const position: [number, number] = [devicePosition.lat, devicePosition.lng];
 
   return (
@@ -32,6 +57,21 @@ export function AbsensiMap({ devicePosition }: { devicePosition: DevicePosition 
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      {office && (
+        <>
+          <Circle
+            center={[office.lat, office.lng]}
+            radius={office.radius}
+            pathOptions={{ color: "#B3050A", fillColor: "#B3050A", fillOpacity: 0.1, weight: 2 }}
+          />
+          <Marker position={[office.lat, office.lng]} icon={officeIcon}>
+            <Popup>
+              {office.name} (radius {office.radius} m)
+            </Popup>
+          </Marker>
+          <FitToBoth device={position} office={office} />
+        </>
+      )}
       <Marker position={position} icon={deviceIcon}>
         <Popup>Lokasi Anda saat Check In/Out</Popup>
       </Marker>
