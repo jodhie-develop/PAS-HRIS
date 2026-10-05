@@ -20,14 +20,24 @@ function formatDate(date: string) {
   });
 }
 
+export type QuotaInfo = {
+  days: number;
+  year: number;
+  // Balance after this (and any other pending) request is approved.
+  remainingAfter: number;
+  quota: number;
+};
+
 export function ApprovalRow({
   request,
   requesterName,
   documentUrl,
+  quotaInfo,
 }: {
   request: LeaveRequest;
   requesterName: string;
   documentUrl: string | null;
+  quotaInfo: QuotaInfo | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [showRejectForm, setShowRejectForm] = useState(false);
@@ -61,6 +71,17 @@ export function ApprovalRow({
           </p>
         </div>
       </div>
+
+      {quotaInfo && (
+        <p
+          className={`mt-2 rounded-md px-2 py-1 text-xs ${
+            quotaInfo.remainingAfter < 0 ? "bg-red-50 text-brand-red" : "bg-gray-50 text-gray-600"
+          }`}
+        >
+          {quotaInfo.days} hari kerja · sisa cuti {quotaInfo.year} jika disetujui: {quotaInfo.remainingAfter} dari{" "}
+          {quotaInfo.quota} hari
+        </p>
+      )}
 
       {request.reason && <p className="mt-2 text-sm text-gray-600">{request.reason}</p>}
 

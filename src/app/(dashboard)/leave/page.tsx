@@ -1,15 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import type { LeaveRequest, LeaveStatus, LeaveType } from "@/types/database";
+import type { LeaveRequest, LeaveStatus, Profile } from "@/types/database";
 import { PageHeader } from "@/components/PageHeader";
+import { todayInJakarta } from "@/lib/date";
+import { LEAVE_TYPE_LABELS, QUOTA_LEAVE_TYPE, computeLeaveBalance, countLeaveDays } from "@/lib/leave";
 import { LeaveRequestForm } from "./LeaveRequestForm";
-
-const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
-  cuti: "Cuti Tahunan",
-  sakit: "Sakit",
-  ijin: "Ijin",
-  dinas_luar_kota: "Dinas Luar Kota",
-  lainnya: "Lainnya",
-};
 
 const STATUS_STYLES: Record<LeaveStatus, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -38,12 +32,34 @@ export default async function LeavePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: requests } = await supabase
-    .from("leave_requests")
-    .select("*")
-    .eq("user_id", user!.id)
-    .order("start_date", { ascending: false })
-    .returns<LeaveRequest[]>();
+  const year = Number(todayInJakarta().slice(0, 4));
+
+  const [{ data: requests }, { data: profile }, { data: holidayRows }] = await Promise.all([
+    supabase
+      .from("leave_requests")
+      .select("*")
+      .eq("user_id", user!.id)
+      .order("start_date", { ascending: false })
+      .returns<LeaveRequest[]>(),
+    supabase
+      .from("profiles")
+      .select("annual_leave_quota")
+      .eq("id", user!.id)
+      .single<Pick<Profile, "annual_leave_quota">>(),
+    // This year and next, so a request planned for early next year previews correctly.
+    supabase
+      .from("public_holidays")
+      .select("date")
+      .gte("date", `${year}-01-01`)
+      .lte("date", `${year + 1}-12-31`),
+  ]);
+
+  const holidayDates = (holidayRows ?? []).map((row) => row.date);
+  const holidays = new Set(holidayDates);
+  const balances = [year, year + 1].map((y) =>
+    computeLeaveBalance(requests ?? [], profile?.annual_leave_quota, holidays, y)
+  );
+  const balance = balances[0];
 
   const documentUrls = new Map<string, string>();
   const signedUrlResults = await Promise.all(
@@ -64,7 +80,28 @@ export default async function LeavePage() {
     <div>
       <PageHeader title="Ijin / Cuti" />
       <div className="space-y-6 p-4">
-        <LeaveRequestForm userId={user!.id} />
+        <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <p className="text-xs font-medium text-gray-500">Sisa Cuti Tahunan {balance.year}</p>
+          <p className="mt-1 text-3xl font-semibold text-gray-900">
+            {Math.max(balance.remaining, 0)}
+            <span className="text-base font-normal text-gray-500"> / {balance.quota} hari</span>
+          </p>
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div
+              className="h-full bg-brand-red"
+              style={{ width: `${Math.min(100, (balance.used / Math.max(balance.quota, 1)) * 100)}%` }}
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+            <span>Terpakai: {balance.used} hari</span>
+            {balance.pending > 0 && <span>Menunggu persetujuan: {balance.pending} hari</span>}
+          </div>
+          <p className="mt-2 text-xs text-gray-400">
+            Dihitung hari kerja Senin-Jumat, tanggal merah tidak memotong kuota. Reset tiap 1 Januari.
+          </p>
+        </div>
+
+        <LeaveRequestForm userId={user!.id} holidayDates={holidayDates} balances={balances} />
 
         <div>
           <h2 className="text-sm font-semibold text-gray-900">Riwayat Pengajuan</h2>
@@ -81,6 +118,8 @@ export default async function LeavePage() {
                     </p>
                     <p className="text-xs text-gray-500">
                       {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                      {request.leave_type === QUOTA_LEAVE_TYPE &&
+                        ` · ${countLeaveDays(request.start_date, request.end_date, holidays)} hari kerja`}
                     </p>
                   </div>
                   <span

@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { todayInJakarta } from "@/lib/date";
 import { PageHeader } from "@/components/PageHeader";
 import type { LeaveRequest, Profile } from "@/types/database";
-import { ApprovalRow } from "./ApprovalRow";
+import { QUOTA_LEAVE_TYPE, computeLeaveBalance, countLeaveDays, yearsInRange } from "@/lib/leave";
+import { ApprovalRow, type QuotaInfo } from "./ApprovalRow";
 
 export default async function ApprovalsPage() {
   const supabase = await createClient();
@@ -82,6 +83,46 @@ export default async function ApprovalsPage() {
     ),
   ]);
 
+  // Quota context for pending annual-leave requests: working days asked for
+  // and what the employee has left in that year (already net of pending).
+  const quotaRequests = (requests ?? []).filter((r) => r.leave_type === QUOTA_LEAVE_TYPE);
+  const quotaInfo = new Map<string, QuotaInfo>();
+  if (quotaRequests.length > 0) {
+    const years = quotaRequests.flatMap((r) => yearsInRange(r.start_date, r.end_date));
+    const minYear = Math.min(...years);
+    const maxYear = Math.max(...years);
+    const quotaUserIds = [...new Set(quotaRequests.map((r) => r.user_id))];
+    const [{ data: holidayRows }, { data: liveRequests }] = await Promise.all([
+      supabase.from("public_holidays").select("date").gte("date", `${minYear}-01-01`).lte("date", `${maxYear}-12-31`),
+      supabase
+        .from("leave_requests")
+        .select("*")
+        .in("user_id", quotaUserIds)
+        .eq("leave_type", QUOTA_LEAVE_TYPE)
+        .in("status", ["pending", "approved"])
+        .lte("start_date", `${maxYear}-12-31`)
+        .gte("end_date", `${minYear}-01-01`)
+        .returns<LeaveRequest[]>(),
+    ]);
+    const holidays = new Set((holidayRows ?? []).map((row) => row.date));
+    const quotaByUser = new Map((requesters ?? []).map((r) => [r.id, r.annual_leave_quota]));
+    for (const request of quotaRequests) {
+      const year = Number(request.start_date.slice(0, 4));
+      const balance = computeLeaveBalance(
+        (liveRequests ?? []).filter((r) => r.user_id === request.user_id),
+        quotaByUser.get(request.user_id),
+        holidays,
+        year
+      );
+      quotaInfo.set(request.id, {
+        days: countLeaveDays(request.start_date, request.end_date, holidays),
+        year,
+        remainingAfter: balance.remaining,
+        quota: balance.quota,
+      });
+    }
+  }
+
   const hadirCount = counts[0].count ?? 0;
   const cutiCount = counts[1].count ?? 0;
 
@@ -125,6 +166,7 @@ export default async function ApprovalsPage() {
                 request={request}
                 requesterName={requesterNames.get(request.user_id) ?? "-"}
                 documentUrl={documentUrls.get(request.id) ?? null}
+                quotaInfo={quotaInfo.get(request.id) ?? null}
               />
             ))}
           </div>

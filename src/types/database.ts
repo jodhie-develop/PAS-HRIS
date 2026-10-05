@@ -233,6 +233,21 @@ export type OfficeLocationUpdate = {
   radius_meters?: number;
 };
 
+// Company-declared non-working days (libur nasional / cuti bersama). They
+// don't count against the annual leave quota.
+export type PublicHoliday = {
+  date: string;
+  name: string;
+  created_at: string;
+};
+export type PublicHolidayInsert = {
+  date: string;
+  name: string;
+};
+export type PublicHolidayUpdate = {
+  name?: string;
+};
+
 export type WorkShiftInsert = {
   shift_name: string;
   start_time: string;
@@ -423,6 +438,12 @@ export type Database = {
         Row: OfficeLocation;
         Insert: OfficeLocationInsert;
         Update: OfficeLocationUpdate;
+        Relationships: [];
+      };
+      public_holidays: {
+        Row: PublicHoliday;
+        Insert: PublicHolidayInsert;
+        Update: PublicHolidayUpdate;
         Relationships: [];
       };
       work_shifts: {

@@ -1,25 +1,53 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { submitLeaveRequest, type LeaveFormState } from "./actions";
 import type { LeaveType } from "@/types/database";
-
-const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
-  cuti: "Cuti Tahunan",
-  sakit: "Sakit",
-  ijin: "Ijin",
-  dinas_luar_kota: "Dinas Luar Kota",
-  lainnya: "Lainnya",
-};
+import {
+  LEAVE_TYPE_LABELS,
+  QUOTA_LEAVE_TYPE,
+  countLeaveDays,
+  yearsInRange,
+  type LeaveBalance,
+} from "@/lib/leave";
 
 const initialState: LeaveFormState = { error: null, success: false };
 
-export function LeaveRequestForm({ userId }: { userId: string }) {
+export function LeaveRequestForm({
+  userId,
+  holidayDates,
+  balances,
+}: {
+  userId: string;
+  holidayDates: string[];
+  // This year's and next year's balance, for the live preview below the dates.
+  balances: LeaveBalance[];
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [state, setState] = useState<LeaveFormState>(initialState);
+  const [leaveType, setLeaveType] = useState<LeaveType>("cuti");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const holidays = useMemo(() => new Set(holidayDates), [holidayDates]);
+  const rangeValid = Boolean(startDate && endDate && endDate >= startDate);
+  const isQuotaLeave = leaveType === QUOTA_LEAVE_TYPE;
+  const workingDays = rangeValid ? countLeaveDays(startDate, endDate, holidays) : 0;
+  // The first year (normally the only one) where this request exceeds what's left.
+  const shortfall =
+    rangeValid && isQuotaLeave
+      ? yearsInRange(startDate, endDate)
+          .map((year) => ({
+            year,
+            needed: countLeaveDays(startDate, endDate, holidays, year),
+            remaining: balances.find((b) => b.year === year)?.remaining ?? null,
+          }))
+          .find((y) => y.remaining !== null && y.needed > y.remaining)
+      : undefined;
+  const blocked = isQuotaLeave && rangeValid && (Boolean(shortfall) || workingDays === 0);
 
   const busy = uploading || isPending;
 
@@ -53,6 +81,9 @@ export function LeaveRequestForm({ userId }: { userId: string }) {
       setState(result);
       if (result.success) {
         form.reset();
+        setLeaveType("cuti");
+        setStartDate("");
+        setEndDate("");
       }
     });
   }
@@ -67,7 +98,8 @@ export function LeaveRequestForm({ userId }: { userId: string }) {
           id="leave_type"
           name="leave_type"
           required
-          defaultValue="cuti"
+          value={leaveType}
+          onChange={(event) => setLeaveType(event.target.value as LeaveType)}
           className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
         >
           {Object.entries(LEAVE_TYPE_LABELS).map(([value, label]) => (
@@ -88,6 +120,8 @@ export function LeaveRequestForm({ userId }: { userId: string }) {
             name="start_date"
             type="date"
             required
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
@@ -100,10 +134,27 @@ export function LeaveRequestForm({ userId }: { userId: string }) {
             name="end_date"
             type="date"
             required
+            min={startDate || undefined}
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
       </div>
+
+      {rangeValid && isQuotaLeave && (
+        <p
+          className={`rounded-lg px-3 py-2 text-sm ${
+            blocked ? "bg-red-50 text-brand-red" : "bg-gray-50 text-gray-700"
+          }`}
+        >
+          {workingDays === 0
+            ? "Rentang ini hanya berisi Sabtu/Minggu atau tanggal merah, tidak perlu cuti."
+            : shortfall
+              ? `Butuh ${shortfall.needed} hari kerja, sisa cuti ${shortfall.year} tinggal ${Math.max(shortfall.remaining ?? 0, 0)} hari.`
+              : `Durasi: ${workingDays} hari kerja (memotong kuota cuti).`}
+        </p>
+      )}
 
       <div>
         <label htmlFor="reason" className="block text-sm font-medium text-gray-700">
@@ -140,7 +191,7 @@ export function LeaveRequestForm({ userId }: { userId: string }) {
 
       <button
         type="submit"
-        disabled={busy}
+        disabled={busy || blocked}
         className="w-full rounded-md bg-brand-red px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
         {uploading ? "Mengunggah dokumen..." : isPending ? "Mengirim..." : "Ajukan"}
