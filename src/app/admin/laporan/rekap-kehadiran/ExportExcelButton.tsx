@@ -136,7 +136,7 @@ function createWorkbook(rows: AttendanceReportRow[], startDate: string, endDate:
     `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
     `<dimension ref="A1:G${lastRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A5" sqref="A5"/></sheetView></sheetViews>` +
     `<sheetFormatPr defaultRowHeight="19"/><cols>${colXml}</cols><sheetData>${title}${period}${header}${body}</sheetData>` +
-    `<mergeCells count="2"><mergeCell ref="A1:G1"/><mergeCell ref="A2:G2"/></mergeCells><autoFilter ref="A4:G${lastRow}"/>` +
+    `<autoFilter ref="A4:G${lastRow}"/><mergeCells count="2"><mergeCell ref="A1:G1"/><mergeCell ref="A2:G2"/></mergeCells>` +
     `<pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
 
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
