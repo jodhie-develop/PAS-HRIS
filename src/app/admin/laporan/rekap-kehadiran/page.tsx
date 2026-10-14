@@ -73,7 +73,7 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Rekap Kehadiran Karyawan</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Rekap Absensi</h1>
         <p className="mt-1 text-sm text-gray-500">Ringkasan kehadiran dan cuti pada periode yang dipilih.</p>
       </div>
 
