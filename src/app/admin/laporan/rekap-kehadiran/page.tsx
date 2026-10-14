@@ -7,7 +7,7 @@ import {
   minutesLate,
 } from "@/lib/attendance-rules";
 import type { Attendance, LeaveRequest, Profile, WorkShift } from "@/types/database";
-import { ExportCsvButton } from "./ExportCsvButton";
+import { ExportExcelButton } from "./ExportExcelButton";
 
 type SearchParams = Promise<{ mulai?: string; selesai?: string }>;
 
@@ -103,7 +103,7 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
           <input name="selesai" type="date" required defaultValue={endDate} className="mt-1 block rounded-md border border-gray-300 px-3 py-2" />
         </label>
         <button className="rounded-md bg-brand-red px-4 py-2 text-sm font-medium text-white">Tampilkan</button>
-        {validRange && <ExportCsvButton rows={reportRows} startDate={startDate} endDate={endDate} />}
+        {validRange && <ExportExcelButton rows={reportRows} startDate={startDate} endDate={endDate} />}
       </form>
 
       {!validRange ? (
