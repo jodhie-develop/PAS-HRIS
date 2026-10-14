@@ -7,6 +7,7 @@ import {
   minutesLate,
 } from "@/lib/attendance-rules";
 import type { Attendance, LeaveRequest, Profile, WorkShift } from "@/types/database";
+import { ExportCsvButton } from "./ExportCsvButton";
 
 type SearchParams = Promise<{ mulai?: string; selesai?: string }>;
 
@@ -70,6 +71,21 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
     leaveByUser.set(leave.user_id, counts);
   }
 
+  const reportRows = (staff ?? []).map((member) => {
+    const present = attendanceByUser.get(member.id) ?? { total: 0, normal: 0, late: 0, early: 0 };
+    const leave = leaveByUser.get(member.id) ?? { cuti: 0, other: 0 };
+    return {
+      id: member.id,
+      name: member.full_name,
+      total: present.total,
+      normal: present.normal,
+      late: present.late,
+      early: present.early,
+      leave: leave.cuti,
+      otherLeave: leave.other,
+    };
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -87,6 +103,7 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
           <input name="selesai" type="date" required defaultValue={endDate} className="mt-1 block rounded-md border border-gray-300 px-3 py-2" />
         </label>
         <button className="rounded-md bg-brand-red px-4 py-2 text-sm font-medium text-white">Tampilkan</button>
+        {validRange && <ExportCsvButton rows={reportRows} startDate={startDate} endDate={endDate} />}
       </form>
 
       {!validRange ? (
@@ -102,13 +119,11 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {(staff ?? []).map((member) => {
-                const present = attendanceByUser.get(member.id) ?? { total: 0, normal: 0, late: 0, early: 0 };
-                const leave = leaveByUser.get(member.id) ?? { cuti: 0, other: 0 };
+              {reportRows.map((row) => {
                 return (
-                  <tr key={member.id}>
-                    <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{member.full_name}</td>
-                    {[present.total, present.normal, present.late, present.early, leave.cuti, leave.other].map((count, index) => (
+                  <tr key={row.id}>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{row.name}</td>
+                    {[row.total, row.normal, row.late, row.early, row.leave, row.otherLeave].map((count, index) => (
                       <td key={index} className="px-4 py-3 text-gray-700">{count}</td>
                     ))}
                   </tr>
