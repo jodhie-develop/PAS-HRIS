@@ -136,6 +136,9 @@ export type AppDocument = {
   status: "pending" | "accepted";
   accepted_by: string | null;
   accepted_at: string | null;
+  extracted_nik: string | null;
+  extracted_name: string | null;
+  extracted_address: string | null;
   created_at: string;
 };
 
@@ -408,6 +411,9 @@ export type AppDocumentInsert = {
   status?: "pending" | "accepted";
   accepted_by?: string | null;
   accepted_at?: string | null;
+  extracted_nik?: string | null;
+  extracted_name?: string | null;
+  extracted_address?: string | null;
 };
 export type AppDocumentUpdate = {
   title?: string;
@@ -417,6 +423,9 @@ export type AppDocumentUpdate = {
   status?: "pending" | "accepted";
   accepted_by?: string | null;
   accepted_at?: string | null;
+  extracted_nik?: string | null;
+  extracted_name?: string | null;
+  extracted_address?: string | null;
 };
 
 export type DocumentType = { id: string; name: string; created_at: string };

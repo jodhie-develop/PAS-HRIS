@@ -32,6 +32,11 @@ export function EmployeeDocuments({ employeeId, documents, downloadUrls }: {
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-gray-900">{document.title}</p>
             <p className="text-xs text-gray-500">{document.category ?? "Dokumen"} · {new Date(document.created_at).toLocaleDateString("id-ID")}</p>
+            {document.category?.toUpperCase() === "KTP" && <div className="mt-2 space-y-0.5 text-xs text-gray-700">
+              <p><span className="font-medium">NIK:</span> {document.extracted_nik ?? "—"}</p>
+              <p><span className="font-medium">Nama:</span> {document.extracted_name ?? "—"}</p>
+              <p><span className="font-medium">Alamat:</span> {document.extracted_address ?? "—"}</p>
+            </div>}
           </div>
           <div className="flex shrink-0 items-center gap-3">
             {downloadUrls[document.id] && <a href={downloadUrls[document.id]} target="_blank" rel="noreferrer" className="text-xs text-brand-navy underline">Lihat</a>}

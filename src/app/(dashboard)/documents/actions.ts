@@ -16,6 +16,9 @@ export async function createDocument(
   const category = formData.get("category");
   const filePath = formData.get("file_path");
   const categoryName = typeof category === "string" ? category.trim() : "";
+  const extractedNik = String(formData.get("extracted_nik") ?? "").trim();
+  const extractedName = String(formData.get("extracted_name") ?? "").trim();
+  const extractedAddress = String(formData.get("extracted_address") ?? "").trim();
 
   if (typeof title !== "string" || !title.trim()) {
     return { error: "Judul wajib diisi.", success: false };
@@ -37,6 +40,9 @@ export async function createDocument(
   }
 
   if (!categoryName) return { error: "Pilih jenis dokumen.", success: false };
+  if (categoryName.toUpperCase() === "KTP" && (!/^\d{16}$/.test(extractedNik) || !extractedName || !extractedAddress)) {
+    return { error: "Data KTP wajib berisi NIK 16 digit, nama, dan alamat.", success: false };
+  }
   const { data: documentType } = await supabase
     .from("document_types")
     .select("id")
@@ -50,6 +56,9 @@ export async function createDocument(
     file_url: filePath,
     uploaded_by: user.id,
     user_id: user.id,
+    extracted_nik: categoryName.toUpperCase() === "KTP" ? extractedNik : null,
+    extracted_name: categoryName.toUpperCase() === "KTP" ? extractedName : null,
+    extracted_address: categoryName.toUpperCase() === "KTP" ? extractedAddress : null,
   });
 
   if (error) {
