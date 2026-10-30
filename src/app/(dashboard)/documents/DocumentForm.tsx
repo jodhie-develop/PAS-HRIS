@@ -8,11 +8,24 @@ import type { DocumentType } from "@/types/database";
 const initialState: DocumentFormState = { error: null, success: false };
 
 export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] }) {
+  const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [state, setState] = useState<DocumentFormState>(initialState);
 
   const busy = uploading || isPending;
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full rounded-md bg-brand-red px-3 py-2.5 text-sm font-medium text-white"
+      >
+        Unggah Dokumen
+      </button>
+    );
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,6 +71,10 @@ export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-gray-900">Unggah Dokumen</h2>
+        <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-500 hover:text-gray-700">Tutup</button>
+      </div>
       <div>
         <label htmlFor="category" className="block text-sm font-medium text-gray-700">
           Jenis Dokumen
@@ -101,7 +118,7 @@ export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] 
         disabled={busy}
         className="w-full rounded-md bg-brand-red px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {uploading ? "Mengunggah..." : isPending ? "Menyimpan..." : "Unggah Dokumen"}
+        {uploading ? "Mengunggah..." : isPending ? "Menyimpan..." : "Simpan Dokumen"}
       </button>
     </form>
   );

@@ -30,8 +30,6 @@ export default async function DocumentsPage() {
     <div>
       <PageHeader title="Dokumen" />
       <div className="space-y-6 p-4">
-        <DocumentForm documentTypes={documentTypes ?? []} />
-
         <div className="space-y-2">
           {(documents ?? []).length === 0 && (
             <p className="text-sm text-gray-500">Belum ada dokumen.</p>
@@ -52,6 +50,7 @@ export default async function DocumentsPage() {
             </a>
           ))}
         </div>
+        <DocumentForm documentTypes={documentTypes ?? []} />
       </div>
     </div>
   );
