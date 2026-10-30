@@ -186,7 +186,7 @@ export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] 
       setCameraError("Kamera belum siap. Tunggu sebentar lalu coba lagi.");
       return;
     }
-    const targetAspect = 1.586;
+    const targetAspect = 8.5 / 5.5;
     let cropWidth = video.videoWidth;
     let cropHeight = video.videoHeight;
     let cropX = 0;
@@ -303,12 +303,13 @@ export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] 
         {category.toUpperCase() === "KTP" && <div className="mt-2 space-y-2">
           {cameraOpen ? <div className="space-y-2">
             <p className="text-xs text-gray-600">Posisikan KTP mendatar di dalam bingkai. Pastikan NIK, nama, dan alamat berada di kotak putih.</p>
-            <div className="relative aspect-[1.586] w-full overflow-hidden rounded-lg bg-black">
+              <div className="relative w-full overflow-hidden rounded-lg bg-black" style={{ aspectRatio: "8.5 / 5.5" }}>
               <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
-              <div className="pointer-events-none absolute inset-[4%] rounded-md border-2 border-white/90" />
-              <div className="pointer-events-none absolute left-[31%] top-[20%] flex h-[15%] w-[57%] items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs">NIK</div>
-              <div className="pointer-events-none absolute left-[18%] top-[38%] flex h-[13%] w-[70%] items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs">NAMA</div>
-              <div className="pointer-events-none absolute left-[18%] top-[57%] flex h-[24%] w-[70%] items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs">ALAMAT</div>
+                <div className="pointer-events-none absolute inset-[4%] rounded-md border-2 border-white/90">
+                  <div className="absolute flex items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs" style={{ left: "23.8%", top: "12.8%", width: "45.1%", height: "9%" }}>NIK</div>
+                  <div className="absolute flex items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs" style={{ left: "23.4%", top: "21.7%", width: "45.3%", height: "6.1%" }}>NAMA</div>
+                  <div className="absolute flex items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs" style={{ left: "23.6%", top: "36.9%", width: "42.3%", height: "19.1%" }}>ALAMAT</div>
+                </div>
             </div>
             <button type="button" onClick={() => void captureKtp()} disabled={ocrBusy} className="w-full rounded-md bg-brand-navy px-3 py-2 text-sm font-medium text-white disabled:opacity-50">Ambil Foto KTP</button>
             <button type="button" onClick={stopCamera} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700">Tutup Kamera</button>
