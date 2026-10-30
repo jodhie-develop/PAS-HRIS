@@ -46,7 +46,12 @@ export default async function DocumentsPage() {
                 <p className="text-sm font-medium text-gray-900">{document.title}</p>
                 {document.category && <p className="text-xs text-gray-500">{document.category}</p>}
               </div>
-              <span className="text-xs text-brand-navy underline">Unduh</span>
+              <div className="flex items-center gap-3">
+                <span className={`rounded-full px-2 py-1 text-xs font-medium ${document.status === "accepted" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}`}>
+                  {document.status === "accepted" ? "Accepted" : "Pending"}
+                </span>
+                <span className="text-xs text-brand-navy underline">Unduh</span>
+              </div>
             </a>
           ))}
         </div>

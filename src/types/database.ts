@@ -133,6 +133,9 @@ export type AppDocument = {
   file_url: string;
   uploaded_by: string | null;
   user_id: string | null;
+  status: "pending" | "accepted";
+  accepted_by: string | null;
+  accepted_at: string | null;
   created_at: string;
 };
 
@@ -402,12 +405,18 @@ export type AppDocumentInsert = {
   file_url: string;
   uploaded_by?: string | null;
   user_id?: string | null;
+  status?: "pending" | "accepted";
+  accepted_by?: string | null;
+  accepted_at?: string | null;
 };
 export type AppDocumentUpdate = {
   title?: string;
   category?: string | null;
   file_url?: string;
   user_id?: string | null;
+  status?: "pending" | "accepted";
+  accepted_by?: string | null;
+  accepted_at?: string | null;
 };
 
 export type DocumentType = { id: string; name: string; created_at: string };
