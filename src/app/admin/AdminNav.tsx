@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/lokasi", label: "Lokasi Kantor" },
   { href: "/admin/libur", label: "Hari Libur" },
   { href: "/admin/asset", label: "Asset" },
+  { href: "/admin/dokumen", label: "Jenis Dokumen" },
   { href: "/admin/laporan", label: "Laporan" },
 ];
 

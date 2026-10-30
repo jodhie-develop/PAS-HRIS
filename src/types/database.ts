@@ -132,6 +132,7 @@ export type AppDocument = {
   category: string | null;
   file_url: string;
   uploaded_by: string | null;
+  user_id: string | null;
   created_at: string;
 };
 
@@ -400,12 +401,18 @@ export type AppDocumentInsert = {
   category?: string | null;
   file_url: string;
   uploaded_by?: string | null;
+  user_id?: string | null;
 };
 export type AppDocumentUpdate = {
   title?: string;
   category?: string | null;
   file_url?: string;
+  user_id?: string | null;
 };
+
+export type DocumentType = { id: string; name: string; created_at: string };
+export type DocumentTypeInsert = { name: string };
+export type DocumentTypeUpdate = { name?: string };
 
 export type CompanyAssetInsert = {
   asset_type?: AssetType;
@@ -541,6 +548,12 @@ export type Database = {
         Row: AppDocument;
         Insert: AppDocumentInsert;
         Update: AppDocumentUpdate;
+        Relationships: [];
+      };
+      document_types: {
+        Row: DocumentType;
+        Insert: DocumentTypeInsert;
+        Update: DocumentTypeUpdate;
         Relationships: [];
       };
       company_assets: {

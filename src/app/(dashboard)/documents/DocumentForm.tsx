@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { createDocument, type DocumentFormState } from "./actions";
+import type { DocumentType } from "@/types/database";
 
 const initialState: DocumentFormState = { error: null, success: false };
 
-export function DocumentForm() {
+export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] }) {
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [state, setState] = useState<DocumentFormState>(initialState);
@@ -21,6 +22,7 @@ export function DocumentForm() {
     const formData = new FormData(form);
     const file = formData.get("file") as File | null;
     formData.delete("file");
+    formData.set("title", file?.name ?? "Dokumen");
 
     if (!file || file.size === 0) {
       setState({ error: "Pilih file terlebih dahulu.", success: false });
@@ -29,7 +31,13 @@ export function DocumentForm() {
 
     setUploading(true);
     const supabase = createClient();
-    const path = `${Date.now()}-${file.name}`;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setUploading(false);
+      setState({ error: "Sesi berakhir, silakan masuk kembali.", success: false });
+      return;
+    }
+    const path = `${user.id}/${Date.now()}-${file.name}`;
     const { error: uploadError } = await supabase.storage.from("documents").upload(path, file);
     setUploading(false);
 
@@ -51,29 +59,19 @@ export function DocumentForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-gray-200 bg-white p-4">
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Judul
-        </label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          required
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-      </div>
-
-      <div>
         <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-          Kategori (opsional)
+          Jenis Dokumen
         </label>
-        <input
+        <select
           id="category"
           name="category"
-          type="text"
-          placeholder="Peraturan / Formulir / Lainnya"
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
+          required
+          defaultValue=""
+          className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+        >
+          <option value="" disabled>Pilih jenis dokumen</option>
+          {documentTypes.map((type) => <option key={type.id} value={type.name}>{type.name}</option>)}
+        </select>
       </div>
 
       <div>

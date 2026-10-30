@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/PageHeader";
-import type { AppDocument, Profile } from "@/types/database";
+import type { AppDocument, DocumentType } from "@/types/database";
 import { DocumentForm } from "./DocumentForm";
 
 export default async function DocumentsPage() {
@@ -10,9 +10,9 @@ export default async function DocumentsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { data: documents }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user!.id).single<Profile>(),
-    supabase.from("documents").select("*").order("created_at", { ascending: false }).returns<AppDocument[]>(),
+  const [{ data: documents }, { data: documentTypes }] = await Promise.all([
+    supabase.from("documents").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).returns<AppDocument[]>(),
+    supabase.from("document_types").select("*").order("name").returns<DocumentType[]>(),
   ]);
 
   const downloadUrls = new Map<string, string>();
@@ -30,7 +30,7 @@ export default async function DocumentsPage() {
     <div>
       <PageHeader title="Dokumen" />
       <div className="space-y-6 p-4">
-        {profile?.role === "hr_admin" && <DocumentForm />}
+        <DocumentForm documentTypes={documentTypes ?? []} />
 
         <div className="space-y-2">
           {(documents ?? []).length === 0 && (

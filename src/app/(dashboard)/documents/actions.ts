@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile } from "@/types/database";
 
 export interface DocumentFormState {
   error: string | null;
@@ -16,6 +15,7 @@ export async function createDocument(
   const title = formData.get("title");
   const category = formData.get("category");
   const filePath = formData.get("file_path");
+  const categoryName = typeof category === "string" ? category.trim() : "";
 
   if (typeof title !== "string" || !title.trim()) {
     return { error: "Judul wajib diisi.", success: false };
@@ -32,22 +32,24 @@ export async function createDocument(
   if (!user) {
     return { error: "Sesi berakhir, silakan masuk kembali.", success: false };
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single<Profile>();
-
-  if (profile?.role !== "hr_admin") {
-    return { error: "Hanya HR yang bisa mengunggah dokumen.", success: false };
+  if (!filePath.startsWith(`${user.id}/`)) {
+    return { error: "Lokasi file tidak valid.", success: false };
   }
+
+  if (!categoryName) return { error: "Pilih jenis dokumen.", success: false };
+  const { data: documentType } = await supabase
+    .from("document_types")
+    .select("id")
+    .eq("name", categoryName)
+    .maybeSingle();
+  if (!documentType) return { error: "Jenis dokumen tidak valid.", success: false };
 
   const { error } = await supabase.from("documents").insert({
     title: title.trim(),
-    category: typeof category === "string" && category.trim() ? category.trim() : null,
+    category: categoryName,
     file_url: filePath,
     uploaded_by: user.id,
+    user_id: user.id,
   });
 
   if (error) {
