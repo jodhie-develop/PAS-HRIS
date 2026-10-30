@@ -186,10 +186,27 @@ export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] 
       setCameraError("Kamera belum siap. Tunggu sebentar lalu coba lagi.");
       return;
     }
+    const targetAspect = 1.586;
+    let cropWidth = video.videoWidth;
+    let cropHeight = video.videoHeight;
+    let cropX = 0;
+    let cropY = 0;
+    if (video.videoWidth / video.videoHeight > targetAspect) {
+      cropWidth = video.videoHeight * targetAspect;
+      cropX = (video.videoWidth - cropWidth) / 2;
+    } else {
+      cropHeight = video.videoWidth / targetAspect;
+      cropY = (video.videoHeight - cropHeight) / 2;
+    }
+    // Match the inset white card frame and retain the KTP's landscape proportions.
+    cropX += cropWidth * 0.04;
+    cropY += cropHeight * 0.04;
+    cropWidth *= 0.92;
+    cropHeight *= 0.92;
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
+    canvas.width = 1600;
+    canvas.height = Math.round(canvas.width / targetAspect);
+    canvas.getContext("2d")?.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
     if (!blob) {
       setCameraError("Foto gagal diambil. Silakan coba lagi.");
@@ -287,7 +304,7 @@ export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] 
           {cameraOpen ? <div className="space-y-2">
             <p className="text-xs text-gray-600">Posisikan KTP mendatar di dalam bingkai. Pastikan NIK, nama, dan alamat berada di kotak putih.</p>
             <div className="relative aspect-[1.586] w-full overflow-hidden rounded-lg bg-black">
-              <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-fill" />
+              <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
               <div className="pointer-events-none absolute inset-[4%] rounded-md border-2 border-white/90" />
               <div className="pointer-events-none absolute left-[31%] top-[20%] flex h-[15%] w-[57%] items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs">NIK</div>
               <div className="pointer-events-none absolute left-[18%] top-[38%] flex h-[13%] w-[70%] items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs">NAMA</div>
