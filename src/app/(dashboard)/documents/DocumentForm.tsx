@@ -306,9 +306,9 @@ export function DocumentForm({ documentTypes }: { documentTypes: DocumentType[] 
               <div className="relative w-full overflow-hidden rounded-lg bg-black" style={{ aspectRatio: "8.5 / 5.5" }}>
               <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
                 <div className="pointer-events-none absolute inset-[4%] rounded-md border-2 border-white/90">
-                  <div className="absolute flex items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs" style={{ left: "23.8%", top: "12.8%", width: "45.1%", height: "9%" }}>NIK</div>
-                  <div className="absolute flex items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs" style={{ left: "23.4%", top: "21.7%", width: "45.3%", height: "6.1%" }}>NAMA</div>
-                  <div className="absolute flex items-start rounded border-2 border-white bg-black/10 px-1 pt-0.5 text-[10px] font-semibold text-white drop-shadow sm:text-xs" style={{ left: "23.6%", top: "36.9%", width: "42.3%", height: "19.1%" }}>ALAMAT</div>
+                  <div aria-label="Area NIK" className="absolute rounded border-2 border-white bg-black/10" style={{ left: "23.8%", top: "12.8%", width: "45.1%", height: "9%" }} />
+                  <div aria-label="Area nama" className="absolute rounded border-2 border-white bg-black/10" style={{ left: "23.4%", top: "21.7%", width: "45.3%", height: "6.1%" }} />
+                  <div aria-label="Area alamat" className="absolute rounded border-2 border-white bg-black/10" style={{ left: "23.6%", top: "36.9%", width: "42.3%", height: "19.1%" }} />
                 </div>
             </div>
             <button type="button" onClick={() => void captureKtp()} disabled={ocrBusy} className="w-full rounded-md bg-brand-navy px-3 py-2 text-sm font-medium text-white disabled:opacity-50">Ambil Foto KTP</button>
