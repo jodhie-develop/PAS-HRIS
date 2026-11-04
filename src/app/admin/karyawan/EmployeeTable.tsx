@@ -7,6 +7,7 @@ export type EmployeeRow = {
   id: string;
   full_name: string;
   nik: string;
+  birth_date: string | null;
   jobTitleName: string;
   role: string;
   supervisorName: string;
@@ -22,6 +23,16 @@ function initials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+}
+
+function formatBirthDate(date: string | null) {
+  if (!date) return "-";
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString("id-ID", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -58,6 +69,7 @@ export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
             <tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
               <th className="pb-2 pr-3">Nama</th>
               <th className="pb-2 pr-3">NIK</th>
+              <th className="pb-2 pr-3">Tanggal Lahir</th>
               <th className="pb-2 pr-3">Jabatan</th>
               <th className="pb-2 pr-3">Role</th>
               <th className="pb-2 pr-3">Atasan</th>
@@ -68,7 +80,7 @@ export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-4 text-sm text-gray-500">
+                <td colSpan={8} className="py-4 text-sm text-gray-500">
                   {employees.length === 0 ? "Belum ada karyawan." : "Tidak ditemukan."}
                 </td>
               </tr>
@@ -98,6 +110,7 @@ export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
                   </div>
                 </td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{employee.nik}</td>
+                <td className="py-2 pr-3 text-sm text-gray-600">{formatBirthDate(employee.birth_date)}</td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{employee.jobTitleName}</td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{ROLE_LABELS[employee.role] ?? employee.role}</td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{employee.supervisorName}</td>

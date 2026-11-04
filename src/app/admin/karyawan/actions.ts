@@ -51,6 +51,10 @@ export async function createEmployee(
   if (!email || !fields.full_name || !fields.nik) {
     return { error: "Email, nama lengkap, dan NIK wajib diisi.", success: false };
   }
+  const nikDigits = fields.nik.replace(/\D/g, "");
+  if (nikDigits.length < 6) {
+    return { error: "NIK harus memiliki minimal 6 digit untuk membuat password awal.", success: false };
+  }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -79,7 +83,7 @@ export async function createEmployee(
       success: false,
     };
   }
-  const temporaryPassword = generateTemporaryPassword();
+  const temporaryPassword = nikDigits.slice(-6);
 
   const { data: created, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,

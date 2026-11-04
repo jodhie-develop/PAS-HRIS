@@ -70,7 +70,7 @@ export function EmployeeCreateForm({
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Dipakai untuk login. Password sementara dibuat otomatis dan ditampilkan setelah disimpan.
+              Dipakai untuk login. Password awal adalah 6 digit terakhir NIK dan wajib diganti saat login pertama.
             </p>
           </div>
           <div>

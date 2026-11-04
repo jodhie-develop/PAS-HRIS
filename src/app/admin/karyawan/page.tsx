@@ -18,6 +18,7 @@ export default async function EmployeesPage() {
     id: employee.id,
     full_name: employee.full_name,
     nik: employee.nik,
+    birth_date: employee.birth_date,
     jobTitleName: employee.job_title_id ? jobTitleNames.get(employee.job_title_id) ?? "-" : employee.job_title ?? "-",
     role: employee.role,
     supervisorName: employee.supervisor_id ? profileNames.get(employee.supervisor_id) ?? "-" : "-",
