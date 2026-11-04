@@ -20,6 +20,9 @@ function readProfileFields(formData: FormData) {
   return {
     full_name: String(formData.get("full_name") ?? "").trim(),
     nik: String(formData.get("nik") ?? "").trim(),
+    nip: String(formData.get("nip") ?? "").trim() || null,
+    address: String(formData.get("address") ?? "").trim() || null,
+    birth_date: String(formData.get("birth_date") ?? "") || null,
     role: String(formData.get("role") ?? "employee") as UserRole,
     job_title_id: String(formData.get("job_title_id") ?? "") || null,
     supervisor_id: String(formData.get("supervisor_id") ?? "") || null,
@@ -89,7 +92,10 @@ export async function createEmployee(
   const { error: profileError } = await supabase.from("profiles").insert({
     id: created.user.id,
     nik: fields.nik,
+    nip: fields.nip,
     full_name: fields.full_name,
+    address: fields.address,
+    birth_date: fields.birth_date,
     job_title: job_title_name,
     job_title_id: fields.job_title_id,
     role: fields.role,
@@ -110,7 +116,7 @@ export async function createEmployee(
     // Roll back the orphaned auth user so a failed save doesn't leave a
     // login-only account with no profile behind.
     await supabaseAdmin.auth.admin.deleteUser(created.user.id);
-    const message = profileError.code === "23505" ? "NIK sudah terdaftar." : "Gagal menyimpan data karyawan.";
+    const message = profileError.code === "23505" ? "NIK atau NIP sudah terdaftar." : "Gagal menyimpan data karyawan.";
     return { error: message, success: false };
   }
 
@@ -196,7 +202,10 @@ export async function updateEmployee(
     .from("profiles")
     .update({
       nik: fields.nik,
+      nip: fields.nip,
       full_name: fields.full_name,
+      address: fields.address,
+      birth_date: fields.birth_date,
       job_title: job_title_name,
       job_title_id: fields.job_title_id,
       role: fields.role,
@@ -216,7 +225,7 @@ export async function updateEmployee(
     .eq("id", id);
 
   if (error) {
-    const message = error.code === "23505" ? "NIK sudah dipakai karyawan lain." : "Gagal memperbarui data karyawan.";
+    const message = error.code === "23505" ? "NIK atau NIP sudah dipakai karyawan lain." : "Gagal memperbarui data karyawan.";
     return { error: message, success: false };
   }
 

@@ -20,7 +20,10 @@ export type LeaveStatus = "pending" | "approved" | "rejected";
 export type Profile = {
   id: string;
   nik: string;
+  nip: string | null;
   full_name: string;
+  address: string | null;
+  birth_date: string | null;
   job_title: string | null;
   job_title_id: string | null;
   role: UserRole;
@@ -185,7 +188,10 @@ export type KpiRecord = {
 export type ProfileInsert = {
   id: string;
   nik: string;
+  nip?: string | null;
   full_name: string;
+  address?: string | null;
+  birth_date?: string | null;
   job_title?: string | null;
   job_title_id?: string | null;
   role?: UserRole;
@@ -204,7 +210,10 @@ export type ProfileInsert = {
 };
 export type ProfileUpdate = {
   nik?: string;
+  nip?: string | null;
   full_name?: string;
+  address?: string | null;
+  birth_date?: string | null;
   job_title?: string | null;
   job_title_id?: string | null;
   role?: UserRole;

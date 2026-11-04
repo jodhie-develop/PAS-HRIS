@@ -119,6 +119,18 @@ export function EmployeeCreateForm({
             />
           </div>
           <div>
+            <label htmlFor="nip" className="block text-sm font-medium text-gray-700">NIP</label>
+            <input id="nip" name="nip" type="text" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label htmlFor="birth_date" className="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
+            <input id="birth_date" name="birth_date" type="date" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="address" className="block text-sm font-medium text-gray-700">Alamat</label>
+            <textarea id="address" name="address" rows={2} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </div>
+          <div>
             <label htmlFor="personal_email" className="block text-sm font-medium text-gray-700">
               Email Pribadi
             </label>
