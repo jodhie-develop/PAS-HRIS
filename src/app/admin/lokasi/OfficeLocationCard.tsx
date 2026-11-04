@@ -29,8 +29,8 @@ export function OfficeLocationCard({
   const [state, formAction, isPending] = useActionState(updateWithId, initialState);
 
   const [name, setName] = useState(office.name);
-  const [latitude, setLatitude] = useState(String(office.latitude));
-  const [longitude, setLongitude] = useState(String(office.longitude));
+  const [latitude, setLatitude] = useState(String(office.latitude ?? ""));
+  const [longitude, setLongitude] = useState(String(office.longitude ?? ""));
   const [radius, setRadius] = useState(String(office.radius_meters));
 
   function handleDelete() {
@@ -44,7 +44,7 @@ export function OfficeLocationCard({
 
   const lat = Number(latitude);
   const lng = Number(longitude);
-  const previewValid = Number.isFinite(lat) && Number.isFinite(lng);
+  const previewValid = latitude !== "" && longitude !== "" && Number.isFinite(lat) && Number.isFinite(lng);
 
   if (editing) {
     return (
@@ -82,7 +82,6 @@ export function OfficeLocationCard({
                   step="any"
                   value={latitude}
                   onChange={(event) => setLatitude(event.target.value)}
-                  required
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
@@ -94,7 +93,6 @@ export function OfficeLocationCard({
                   step="any"
                   value={longitude}
                   onChange={(event) => setLongitude(event.target.value)}
-                  required
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
@@ -128,7 +126,7 @@ export function OfficeLocationCard({
               />
             ) : (
               <div className="flex h-[180px] w-full items-center justify-center bg-gray-50 text-sm text-gray-400">
-                Koordinat tidak valid
+                GPS belum diatur. Isi koordinat untuk mengaktifkan absensi kantor.
               </div>
             )}
           </div>
@@ -162,18 +160,24 @@ export function OfficeLocationCard({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <OfficeMapLoader
-        latitude={office.latitude}
-        longitude={office.longitude}
-        radiusMeters={office.radius_meters}
-        name={office.name}
-      />
+      {office.latitude !== null && office.longitude !== null ? (
+        <OfficeMapLoader
+          latitude={office.latitude}
+          longitude={office.longitude}
+          radiusMeters={office.radius_meters}
+          name={office.name}
+        />
+      ) : (
+        <div className="flex h-[180px] items-center justify-center bg-amber-50 px-4 text-center text-sm text-amber-800">
+          GPS cabang belum diatur. Absensi kantor belum dapat digunakan.
+        </div>
+      )}
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-gray-900">{office.name}</p>
             <p className="mt-0.5 text-sm text-gray-500">{office.address ?? "Alamat belum diisi."}</p>
-            <p className="mt-1 text-xs text-gray-400">Radius {office.radius_meters}m</p>
+            <p className="mt-1 text-xs text-gray-400">{office.latitude !== null && office.longitude !== null ? `Radius ${office.radius_meters}m` : "GPS belum diatur"}</p>
             {office.radius_meters < MIN_OFFICE_RADIUS_METERS && (
               <p className="mt-1 text-xs font-medium text-brand-red">
                 Radius terlalu kecil, karyawan bisa gagal absen. Edit &amp; ubah minimal {MIN_OFFICE_RADIUS_METERS}m.

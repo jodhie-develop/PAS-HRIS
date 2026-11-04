@@ -6,8 +6,9 @@ import { EmployeeCreateForm } from "../EmployeeCreateForm";
 export default async function NewEmployeePage() {
   const supabase = await createClient();
 
-  const [{ data: jobTitles }, { data: supervisors }, { data: officeLocations }, { data: shifts }] =
+  const [{ data: user }, { data: jobTitles }, { data: supervisors }, { data: officeLocations }, { data: shifts }] =
     await Promise.all([
+      supabase.auth.getUser(),
       supabase.from("job_titles").select("*").order("name").returns<JobTitle[]>(),
       supabase
         .from("profiles")
@@ -21,6 +22,9 @@ export default async function NewEmployeePage() {
       supabase.from("office_locations").select("*").order("name").returns<OfficeLocation[]>(),
       supabase.from("work_shifts").select("*").order("start_time").returns<WorkShift[]>(),
     ]);
+  const { data: currentProfile } = user.user
+    ? await supabase.from("profiles").select("is_superadmin").eq("id", user.user.id).maybeSingle<{ is_superadmin: boolean }>()
+    : { data: null };
 
   return (
     <div className="space-y-6">
@@ -39,6 +43,7 @@ export default async function NewEmployeePage() {
         supervisors={supervisors ?? []}
         officeLocations={officeLocations ?? []}
         shifts={shifts ?? []}
+        canManageAdmins={currentProfile?.is_superadmin === true}
       />
     </div>
   );

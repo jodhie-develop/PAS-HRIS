@@ -13,18 +13,21 @@ function parseFields(formData: FormData) {
   return {
     name: String(formData.get("name") ?? "").trim(),
     address: String(formData.get("address") ?? "").trim() || null,
-    latitude: Number(formData.get("latitude")),
-    longitude: Number(formData.get("longitude")),
+    latitude: String(formData.get("latitude") ?? "").trim() === "" ? null : Number(formData.get("latitude")),
+    longitude: String(formData.get("longitude") ?? "").trim() === "" ? null : Number(formData.get("longitude")),
     radius_meters: Number(formData.get("radius_meters") ?? 100),
   };
 }
 
 function validate(fields: ReturnType<typeof parseFields>): string | null {
   if (!fields.name) return "Nama kantor wajib diisi.";
-  if (!Number.isFinite(fields.latitude) || fields.latitude < -90 || fields.latitude > 90) {
+  if ((fields.latitude === null) !== (fields.longitude === null)) {
+    return "Latitude dan longitude harus diisi bersama atau dikosongkan bersama.";
+  }
+  if (fields.latitude !== null && (!Number.isFinite(fields.latitude) || fields.latitude < -90 || fields.latitude > 90)) {
     return "Latitude tidak valid.";
   }
-  if (!Number.isFinite(fields.longitude) || fields.longitude < -180 || fields.longitude > 180) {
+  if (fields.longitude !== null && (!Number.isFinite(fields.longitude) || fields.longitude < -180 || fields.longitude > 180)) {
     return "Longitude tidak valid.";
   }
   if (!Number.isFinite(fields.radius_meters) || fields.radius_meters <= 0) {

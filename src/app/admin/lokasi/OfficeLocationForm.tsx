@@ -60,7 +60,6 @@ export function OfficeLocationForm() {
                 name="latitude"
                 type="number"
                 step="any"
-                required
                 value={latitude}
                 onChange={(event) => setLatitude(event.target.value)}
                 placeholder="-7.374080"
@@ -76,7 +75,6 @@ export function OfficeLocationForm() {
                 name="longitude"
                 type="number"
                 step="any"
-                required
                 value={longitude}
                 onChange={(event) => setLongitude(event.target.value)}
                 placeholder="112.753806"
@@ -108,6 +106,7 @@ export function OfficeLocationForm() {
           <p className="text-xs text-gray-500">
             Atau: buka Google Maps, klik kanan pada lokasi kantor, lalu salin koordinat yang muncul.
           </p>
+          <p className="text-xs text-amber-700">Koordinat boleh dikosongkan sementara. Absensi kantor baru aktif setelah GPS cabang diatur.</p>
         </div>
 
         <div className="overflow-hidden rounded-lg border border-gray-200">

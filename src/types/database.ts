@@ -27,6 +27,7 @@ export type Profile = {
   job_title: string | null;
   job_title_id: string | null;
   role: UserRole;
+  is_superadmin: boolean;
   supervisor_id: string | null;
   office_location_id: string | null;
   default_shift_id: string | null;
@@ -47,8 +48,8 @@ export type OfficeLocation = {
   id: string;
   name: string;
   address: string | null;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   radius_meters: number;
   created_at: string;
 };
@@ -195,6 +196,7 @@ export type ProfileInsert = {
   job_title?: string | null;
   job_title_id?: string | null;
   role?: UserRole;
+  is_superadmin?: boolean;
   supervisor_id?: string | null;
   office_location_id?: string | null;
   default_shift_id?: string | null;
@@ -234,15 +236,15 @@ export type ProfileUpdate = {
 export type OfficeLocationInsert = {
   name: string;
   address?: string | null;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   radius_meters?: number;
 };
 export type OfficeLocationUpdate = {
   name?: string;
   address?: string | null;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   radius_meters?: number;
 };
 

@@ -28,11 +28,13 @@ export function CheckInOutForm({
   attendance,
   onLocated,
   selfieRef,
+  disabledReason,
 }: {
   attendance: Attendance | null;
   onLocated?: (position: DevicePosition) => void;
   // Set for "anywhere" employees: a selfie is taken before each check-in/out.
   selfieRef?: RefObject<CaptureSelfie | null>;
+  disabledReason?: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const [locating, setLocating] = useState(false);
@@ -154,7 +156,7 @@ export function CheckInOutForm({
         {!hasCheckedIn && (
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || Boolean(disabledReason)}
             onClick={() => handle(checkIn)}
             className="w-full rounded-md bg-brand-red px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
@@ -165,7 +167,7 @@ export function CheckInOutForm({
         {hasCheckedIn && !hasCheckedOut && (
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || Boolean(disabledReason)}
             onClick={() => handle(checkOut)}
             className="w-full rounded-md bg-brand-red px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
@@ -183,6 +185,7 @@ export function CheckInOutForm({
           {result.error}
         </p>
       )}
+      {disabledReason && <p className="mt-3 text-sm text-amber-700">{disabledReason}</p>}
     </div>
   );
 }

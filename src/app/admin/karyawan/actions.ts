@@ -53,6 +53,12 @@ export async function createEmployee(
   }
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Sesi berakhir, silakan masuk kembali.", success: false };
+  const { data: actor } = await supabase.from("profiles").select("is_superadmin").eq("id", user.id).maybeSingle<{ is_superadmin: boolean }>();
+  if (fields.role === "hr_admin" && actor?.is_superadmin !== true) {
+    return { error: "Hanya superadmin yang dapat membuat HR Admin.", success: false };
+  }
 
   let job_title_name: string | null = null;
   if (fields.job_title_id) {
@@ -162,6 +168,21 @@ export async function updateEmployee(
   }
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Sesi berakhir, silakan masuk kembali.", success: false };
+  const [{ data: actor }, { data: target }] = await Promise.all([
+    supabase.from("profiles").select("is_superadmin").eq("id", user.id).maybeSingle<{ is_superadmin: boolean }>(),
+    supabase.from("profiles").select("role,is_superadmin").eq("id", id).maybeSingle<{ role: UserRole; is_superadmin: boolean }>(),
+  ]);
+  if (!target) return { error: "Profil karyawan tidak ditemukan.", success: false };
+  if (actor?.is_superadmin !== true) {
+    if (fields.role === "hr_admin" && target.role !== "hr_admin") {
+      return { error: "Hanya superadmin yang dapat mengangkat HR Admin.", success: false };
+    }
+    fields.role = target.role;
+  } else if (target.is_superadmin && fields.role !== "hr_admin") {
+    return { error: "Role akun superadmin utama tidak dapat diturunkan.", success: false };
+  }
 
   let job_title_name: string | null = null;
   if (fields.job_title_id) {

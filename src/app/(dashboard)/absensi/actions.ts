@@ -145,6 +145,9 @@ export async function checkIn(
     if (!office) {
       return { error: "Lokasi kantor belum diatur untuk akun Anda. Hubungi HR.", success: false };
     }
+    if (office.latitude === null || office.longitude === null) {
+      return { error: `GPS cabang ${office.name} belum diatur. Hubungi HR.`, success: false };
+    }
 
     const distance = distanceInMeters(latitude, longitude, office.latitude, office.longitude);
     if (distance > office.radius_meters) {
@@ -221,6 +224,17 @@ export async function checkOut(
     .select("*")
     .eq("id", user.id)
     .single<Profile>();
+
+  if (profile?.attendance_mode !== "anywhere" && profile?.office_location_id) {
+    const { data: office } = await supabase
+      .from("office_locations")
+      .select("name,latitude,longitude")
+      .eq("id", profile.office_location_id)
+      .maybeSingle<Pick<OfficeLocation, "name" | "latitude" | "longitude">>();
+    if (office && (office.latitude === null || office.longitude === null)) {
+      return { error: `GPS cabang ${office.name} belum diatur. Hubungi HR.`, success: false };
+    }
+  }
 
   let photoPath: string | null = null;
 

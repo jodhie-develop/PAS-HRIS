@@ -13,11 +13,13 @@ export function EmployeeCreateForm({
   supervisors,
   officeLocations,
   shifts,
+  canManageAdmins,
 }: {
   jobTitles: JobTitle[];
   supervisors: Profile[];
   officeLocations: OfficeLocation[];
   shifts: WorkShift[];
+  canManageAdmins: boolean;
 }) {
   const [state, formAction, isPending] = useActionState(createEmployee, initialState);
 
@@ -83,7 +85,7 @@ export function EmployeeCreateForm({
             >
               <option value="employee">Karyawan</option>
               <option value="supervisor">Supervisor</option>
-              <option value="hr_admin">HR Admin</option>
+              {canManageAdmins && <option value="hr_admin">HR Admin</option>}
             </select>
           </div>
         </div>

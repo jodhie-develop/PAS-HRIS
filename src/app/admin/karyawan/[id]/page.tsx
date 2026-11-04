@@ -11,8 +11,9 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: employee }, { data: jobTitles }, { data: supervisors }, { data: officeLocations }, { data: shifts }, { data: documents }] =
+  const [{ data: user }, { data: employee }, { data: jobTitles }, { data: supervisors }, { data: officeLocations }, { data: shifts }, { data: documents }] =
     await Promise.all([
+      supabase.auth.getUser(),
       supabase.from("profiles").select("*").eq("id", id).maybeSingle<Profile>(),
       supabase.from("job_titles").select("*").order("name").returns<JobTitle[]>(),
       supabase
@@ -32,6 +33,9 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
   if (!employee) {
     notFound();
   }
+  const { data: currentProfile } = user.user
+    ? await supabase.from("profiles").select("is_superadmin").eq("id", user.user.id).maybeSingle<{ is_superadmin: boolean }>()
+    : { data: null };
 
   const downloadUrls: Record<string, string> = {};
   await Promise.all((documents ?? []).map(async (document) => {
@@ -74,6 +78,7 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
         supervisors={supervisors ?? []}
         officeLocations={officeLocations ?? []}
         shifts={shifts ?? []}
+        canManageAdmins={currentProfile?.is_superadmin === true}
       />
 
       <EmployeeDocuments employeeId={employee.id} documents={documents ?? []} downloadUrls={downloadUrls} />

@@ -44,11 +44,12 @@ export function AbsensiClient({
       });
   }, []);
 
-  const officeArea = office
+  const officeConfigured = Boolean(office && office.latitude !== null && office.longitude !== null);
+  const officeArea = office && office.latitude !== null && office.longitude !== null
     ? { lat: office.latitude, lng: office.longitude, radius: office.radius_meters, name: office.name }
     : null;
   const distance =
-    devicePosition && office
+    devicePosition && office && office.latitude !== null && office.longitude !== null
       ? Math.round(distanceInMeters(devicePosition.lat, devicePosition.lng, office.latitude, office.longitude))
       : null;
   const insideRadius = distance !== null && office !== null && distance <= office.radius_meters;
@@ -123,7 +124,7 @@ export function AbsensiClient({
               ±{Math.round(devicePosition.accuracy)} m)
             </p>
           )}
-          {office ? (
+          {office && officeConfigured ? (
             <>
               <p className="mt-1 text-xs font-medium text-gray-500">Anda tercatat harus absen di :</p>
               <p className="text-sm font-semibold text-gray-900">{office.name}</p>
@@ -144,6 +145,8 @@ export function AbsensiClient({
                 </p>
               )}
             </>
+          ) : office ? (
+            <p className="mt-1 text-sm text-amber-700">GPS cabang {office.name} belum diatur. Absensi kantor belum dapat digunakan.</p>
           ) : (
             <p className="mt-1 text-sm text-gray-500">
               Lokasi kantor belum diatur untuk akun Anda. Hubungi HR.
@@ -153,7 +156,11 @@ export function AbsensiClient({
       </div>
 
       <div className="mt-4">
-        <CheckInOutForm attendance={attendance} onLocated={setDevicePosition} />
+        <CheckInOutForm
+          attendance={attendance}
+          onLocated={setDevicePosition}
+          disabledReason={office && !officeConfigured ? `GPS cabang ${office.name} belum diatur. Hubungi HR.` : undefined}
+        />
       </div>
     </>
   );

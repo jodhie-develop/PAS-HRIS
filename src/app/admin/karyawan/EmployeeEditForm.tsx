@@ -14,6 +14,7 @@ export function EmployeeEditForm({
   supervisors,
   officeLocations,
   shifts,
+  canManageAdmins,
 }: {
   employee: Profile;
   companyEmail: string;
@@ -21,6 +22,7 @@ export function EmployeeEditForm({
   supervisors: Profile[];
   officeLocations: OfficeLocation[];
   shifts: WorkShift[];
+  canManageAdmins: boolean;
 }) {
   const updateEmployeeWithId = updateEmployee.bind(null, employee.id);
   const [state, formAction, isPending] = useActionState(updateEmployeeWithId, initialState);
@@ -157,7 +159,7 @@ export function EmployeeEditForm({
       <div>
         <h2 className="text-sm font-semibold text-gray-900">Penempatan</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div>
+          {canManageAdmins ? <div>
             <label htmlFor="role" className="block text-sm font-medium text-gray-700">
               Role
             </label>
@@ -171,7 +173,13 @@ export function EmployeeEditForm({
               <option value="supervisor">Supervisor</option>
               <option value="hr_admin">HR Admin</option>
             </select>
-          </div>
+          </div> : <div>
+            <p className="block text-sm font-medium text-gray-700">Role</p>
+            <p className="mt-1 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
+              {employee.role === "hr_admin" ? "HR Admin" : employee.role === "supervisor" ? "Supervisor" : "Karyawan"}
+            </p>
+            <input type="hidden" name="role" value={employee.role} />
+          </div>}
           <div>
             <label htmlFor="job_title_id" className="block text-sm font-medium text-gray-700">
               Jabatan
