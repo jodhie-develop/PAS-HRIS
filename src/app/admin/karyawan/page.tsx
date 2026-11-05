@@ -1,24 +1,28 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { JobTitle, Profile } from "@/types/database";
+import type { JobTitle, OfficeLocation, Profile } from "@/types/database";
 import { EmployeeTable, type EmployeeRow } from "./EmployeeTable";
 
 export default async function EmployeesPage() {
   const supabase = await createClient();
 
-  const [{ data: employees }, { data: jobTitles }] = await Promise.all([
+  const [{ data: employees }, { data: jobTitles }, { data: officeLocations }] = await Promise.all([
     supabase.from("profiles").select("*").order("full_name").returns<Profile[]>(),
     supabase.from("job_titles").select("*").returns<JobTitle[]>(),
+    supabase.from("office_locations").select("id,name").order("name").returns<Pick<OfficeLocation, "id" | "name">[]>(),
   ]);
 
   const jobTitleNames = new Map((jobTitles ?? []).map((jobTitle) => [jobTitle.id, jobTitle.name]));
   const profileNames = new Map((employees ?? []).map((employee) => [employee.id, employee.full_name]));
+  const officeNames = new Map((officeLocations ?? []).map((office) => [office.id, office.name]));
 
   const rows: EmployeeRow[] = (employees ?? []).map((employee) => ({
     id: employee.id,
     full_name: employee.full_name,
     nik: employee.nik,
     birth_date: employee.birth_date,
+    officeLocationId: employee.office_location_id,
+    officeLocationName: employee.office_location_id ? officeNames.get(employee.office_location_id) ?? "-" : "Belum ditempatkan",
     jobTitleName: employee.job_title_id ? jobTitleNames.get(employee.job_title_id) ?? "-" : employee.job_title ?? "-",
     role: employee.role,
     supervisorName: employee.supervisor_id ? profileNames.get(employee.supervisor_id) ?? "-" : "-",
@@ -42,7 +46,7 @@ export default async function EmployeesPage() {
         </Link>
       </div>
 
-      <EmployeeTable employees={rows} />
+      <EmployeeTable employees={rows} branches={officeLocations ?? []} />
     </div>
   );
 }

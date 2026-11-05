@@ -8,6 +8,8 @@ export type EmployeeRow = {
   full_name: string;
   nik: string;
   birth_date: string | null;
+  officeLocationId: string | null;
+  officeLocationName: string;
   jobTitleName: string;
   role: string;
   supervisorName: string;
@@ -41,27 +43,44 @@ const ROLE_LABELS: Record<string, string> = {
   hr_admin: "HR Admin",
 };
 
-export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
+export function EmployeeTable({ employees, branches }: { employees: EmployeeRow[]; branches: { id: string; name: string }[] }) {
   const [query, setQuery] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return employees;
     return employees.filter(
-      (employee) =>
-        employee.full_name.toLowerCase().includes(q) || employee.nik.toLowerCase().includes(q)
+      (employee) => {
+        const matchesSearch = !q || employee.full_name.toLowerCase().includes(q) || employee.nik.toLowerCase().includes(q);
+        const matchesBranch = !branchFilter || (branchFilter === "__unassigned__"
+          ? employee.officeLocationId === null
+          : employee.officeLocationId === branchFilter);
+        return matchesSearch && matchesBranch;
+      }
     );
-  }, [employees, query]);
+  }, [employees, query, branchFilter]);
 
   return (
     <div className="space-y-3">
-      <input
-        type="text"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Cari nama atau NIK..."
-        className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm"
-      />
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Cari nama atau NIK..."
+          className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+        <select
+          value={branchFilter}
+          onChange={(event) => setBranchFilter(event.target.value)}
+          aria-label="Filter cabang"
+          className="w-full max-w-xs rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+        >
+          <option value="">Semua Cabang</option>
+          {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+          <option value="__unassigned__">Belum ditempatkan</option>
+        </select>
+      </div>
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <table className="w-full text-left">
@@ -70,6 +89,7 @@ export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
               <th className="pb-2 pr-3">Nama</th>
               <th className="pb-2 pr-3">NIK</th>
               <th className="pb-2 pr-3">Tanggal Lahir</th>
+              <th className="pb-2 pr-3">Cabang</th>
               <th className="pb-2 pr-3">Jabatan</th>
               <th className="pb-2 pr-3">Role</th>
               <th className="pb-2 pr-3">Atasan</th>
@@ -80,7 +100,7 @@ export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-4 text-sm text-gray-500">
+                <td colSpan={9} className="py-4 text-sm text-gray-500">
                   {employees.length === 0 ? "Belum ada karyawan." : "Tidak ditemukan."}
                 </td>
               </tr>
@@ -111,6 +131,7 @@ export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
                 </td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{employee.nik}</td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{formatBirthDate(employee.birth_date)}</td>
+                <td className="py-2 pr-3 text-sm text-gray-600">{employee.officeLocationName}</td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{employee.jobTitleName}</td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{ROLE_LABELS[employee.role] ?? employee.role}</td>
                 <td className="py-2 pr-3 text-sm text-gray-600">{employee.supervisorName}</td>
